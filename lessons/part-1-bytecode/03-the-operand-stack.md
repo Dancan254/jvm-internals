@@ -46,7 +46,7 @@ Every method call gets a **frame** pushed onto the calling thread's JVM stack. A
 - **The local variable array** — numbered slots holding the parameters first, then the method's locals. For an instance method, slot 0 is `this`, so the first declared parameter is slot 1. `long` and `double` values are wide and each occupy **two** slots.
 - **The operand stack** — a last-in-first-out stack used for intermediate results. It is empty when the method starts, and a non-`void` method must have exactly its return value on top when it executes its `return` instruction.
 
-These are per-thread and per-call. No other thread can touch a frame's locals or stack — the same isolation the concurrency course relies on for local variables in [race conditions](https://github.com/Dancan254/concurreny-multithreading/blob/main/lessons/part-2-shared-state/05-race-conditions.md).
+These are per-thread and per-call. No other thread can touch a frame's locals or stack — the same isolation the concurrency course relies on for local variables in [race conditions](https://github.com/Dancan254/concurreny-multithreading/blob/master/lessons/part-2-shared-state/05-race-conditions.md).
 
 ### The instruction families
 
@@ -163,7 +163,7 @@ public class StackMath {
 }
 ```
 
-Three methods, and you never wrote two of them. `javac` always emits a constructor (here the default one, calling `Object.<init>` via `invokespecial` — an invocation opcode you'll dissect in Lesson 04). The `#1`, `#7`, `#13`, `#19` numbers are indexes into the **constant pool** from Lesson 02; the `//` comments are `javap` resolving them for you.
+Three methods, and you never wrote one of them. `javac` always emits a constructor (here the default one, calling `Object.<init>` via `invokespecial` — an invocation opcode you'll dissect in Lesson 04). The `#1`, `#7`, `#13`, `#19` numbers are indexes into the **constant pool** from Lesson 02; the `//` comments are `javap` resolving them for you.
 
 The numbers on the left (`0:`, `1:`, `3:` …) are **byte offsets** into the method's bytecode array, not line numbers. They skip values because instructions have different lengths: `iload_0` is one byte, but `getstatic #7` is three (one opcode byte plus a two-byte constant-pool index), which is why `main` jumps from `0:` to `3:`.
 
@@ -233,7 +233,7 @@ For contrast, look at `main` in the same output: `stack=4`. Its deepest point is
 2. Change `sum * c - 1` to `sum * c - 300`. What instruction replaces `iconst_1`, and why? (Try 300, then 40000, and watch where the constant comes from.)
 3. Add a `long` parameter to `compute`. How do `locals=` and the slot numbers of the later parameters change? (A `long` takes two slots — confirm it in the output.)
 4. Make `compute` an instance method (drop `static`) and call it on a `new StackMath()`. What occupies local slot 0 now, and what did that do to every other slot number?
-5. Trace `main`'s bytecode by hand the way we traced `compute`, drawing the stack after each of its six instructions. What is on the stack when `invokestatic` runs, and what is on it after?
+5. Trace `main`'s bytecode by hand the way we traced `compute`, drawing the stack after each of its seven instructions. What is on the stack when `invokestatic` runs, and what is on it after?
 
 ---
 
