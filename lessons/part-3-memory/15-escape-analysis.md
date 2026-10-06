@@ -232,7 +232,7 @@ One honest caution about the `elapsed=` numbers: this is a teaching demo, not a 
 
 ### 4. The control: switch the analysis off
 
-Same source, same run as section 2, one flag added — first use in this course, so full explanation. `-XX:-DoEscapeAnalysis` disables HotSpot's escape analysis. The flag family is HotSpot's boolean `-XX` knobs: `-XX:+Name` enables, `-XX:-Name` disables, and these are HotSpot implementation details rather than anything the JVM specification promises — the same warning [Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) gave for this family. Escape analysis has been on by default for so long that the flag exists almost purely for experiments like this one:
+Same source, same run as section 2, one flag added — first use in this course, so full explanation. `-XX:-DoEscapeAnalysis` disables HotSpot's escape analysis; the `+`/`-` boolean-flag convention itself is [Lesson 14](14-compressed-oops.md)'s, introduced there with `-XX:-UseCompressedOops`. These flags are HotSpot implementation details rather than anything the JVM specification promises — the same warning [Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) gave for this family. Escape analysis has been on by default for so long that the flag exists almost purely for experiments like this one:
 
 ```bash
 java -Xmx64m -Xlog:gc -XX:-DoEscapeAnalysis EscapeBench

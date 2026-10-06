@@ -96,7 +96,7 @@ Here is the deliverable the rest of Part 3 consumes. Each error flavor maps to e
 | `java.lang.OutOfMemoryError: Direct buffer memory` | Off-heap direct buffers — outside all five areas | [Lesson 17](17-off-heap-memory.md) |
 | `java.lang.OutOfMemoryError: unable to create native thread` | Native method stacks / OS threads | None — see below |
 
-The direct-buffer row uses the traditional short name. On this JDK the real message is more verbose — `java.lang.OutOfMemoryError: Cannot reserve 8388608 bytes of direct buffer memory (allocated: 33554432, limit: 33554432)`, captured on this machine under `-XX:MaxDirectMemorySize=32m` — but it still names direct buffer memory plainly, and lesson 17 produces the full line on purpose.
+The direct-buffer row uses the traditional short name. On this JDK the real message is more verbose — `java.lang.OutOfMemoryError: Cannot reserve 8388608 bytes of direct buffer memory (allocated: 33554432, limit: 33554432)`, captured on this machine under `-XX:MaxDirectMemorySize=32m` while requesting 8 MB at once. The number is the failed request's size, so [Lesson 17](17-off-heap-memory.md)'s 1 MB buffers print `Cannot reserve 1048576 bytes...` instead — same error, smaller ask. Either way it still names direct buffer memory plainly, and lesson 17 produces the full line on purpose.
 
 The last row is deliberate. Every failure demo in this course is *bounded*: pinned with a size flag so it dies in seconds, in the intended flavor, without stressing the machine. A thread-spam demo for `unable to create native thread` has no such pin — it fails by exhausting a host resource (memory for thread stacks, or a process limit), which can destabilize the machine it's demonstrating on. That story is told, not run.
 

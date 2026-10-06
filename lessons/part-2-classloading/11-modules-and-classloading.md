@@ -444,4 +444,4 @@ It is a legitimate *migration bridge* — it restores reflective access for a li
 - Failure modes moved checkpoints: *not found* → `NoClassDefFoundError`; *found but refused* → `IllegalAccessError` (link time) or `InaccessibleObjectException` (reflection). Read the error class before reaching for the classpath.
 - `--module-source-path` compiles module trees; `--module-path` + `--module` run them; `--show-module-resolution` prints the graph; `--add-exports` / `--add-opens` are migration bridges, not fixes.
 
-**Previous:** [Lesson 10 — Classloader leaks](10-classloader-leaks.md) · **Next:** Lesson 12 — Runtime data areas
+**Previous:** [Lesson 10 — Classloader leaks](10-classloader-leaks.md) · **Next:** [Lesson 12 — Runtime data areas](../part-3-memory/12-runtime-data-areas.md)

@@ -213,7 +213,7 @@ Compile it against the jar:
 javac -cp jol-core.jar LayoutDemo.java
 ```
 
-**Run 1 — defaults.** One more new flag first: `--sun-misc-unsafe-memory-access=allow`. JOL 0.17 reads VM internals through `sun.misc.Unsafe`, and JDK 25 prints a four-line deprecation nag about it; this flag (new in JDK 24) tells the runtime "I allow Unsafe memory access from the classpath" and silences the nag. It changes nothing about layouts — it keeps our output readable:
+**Run 1 — defaults.** The `--sun-misc-unsafe-memory-access=allow` flag is back — [Lesson 13](13-object-layout-jol.md) owns its first-use explanation (it silences the terminally-deprecated `sun.misc.Unsafe` nag JOL triggers on JDK 24+). Here we keep passing it for the same reason: it changes nothing about layouts — it keeps our output readable:
 
 ```bash
 java --sun-misc-unsafe-memory-access=allow -cp .:jol-core.jar LayoutDemo

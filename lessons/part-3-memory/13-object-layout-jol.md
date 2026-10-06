@@ -243,12 +243,16 @@ public class MarkWord {
 }
 ```
 
+One new flag makes its first appearance in the course here: `--sun-misc-unsafe-memory-access=allow`. JOL reads raw memory through `sun.misc.Unsafe`, and since JDK 24 the runtime prints a four-line `WARNING: A terminally deprecated method in sun.misc.Unsafe...` nag the first time any classpath code touches Unsafe's memory-access API. The flag tells the runtime you allow that access and silences the nag — it changes nothing about what JOL measures. Under Maven you never saw it because Maven's own Guice wiring had already spent the once-per-JVM warning before our code ran; standalone, JOL is the first caller, so the nag lands in *our* output unless we allow it:
+
 ```bash
 javac -cp "$JAR" MarkWord.java
-java -cp ".:$JAR" MarkWord
+java --sun-misc-unsafe-memory-access=allow -cp ".:$JAR" MarkWord
 ```
 
 ```text
+# WARNING: Unable to get Instrumentation. Dynamic Attach failed. You may add this JAR as -javaagent manually, or supply -Djdk.attach.allowAttachSelf
+# WARNING: Unable to attach Serviceability Agent. You can try again with escalated privileges. Two options: a) use -Djol.tryWithSudo=true to try with sudo; b) echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 java.lang.Object object internals:
 OFF  SZ   TYPE DESCRIPTION               VALUE
   0   8        (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
@@ -259,14 +263,14 @@ Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
 
 java.lang.Object object internals:
 OFF  SZ   TYPE DESCRIPTION               VALUE
-  0   8        (object header: mark)     0x00000313aa8fd801 (hash: 0x13aa8fd8; age: 0)
+  0   8        (object header: mark)     0x0000033dc9785001 (hash: 0x3dc97850; age: 0)
   8   4        (object header: class)    0x00171bf8
  12   4        (object alignment gap)    
 Instance size: 16 bytes
 Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
 ```
 
-*(All hex values vary per run.)* One `identityHashCode` call — which the program never even prints — rewrote the word: the tag bits still read `01` (unlocked), but a hash now occupies the upper bits and JOL's annotation changed to `hash: 0x13aa8fd8`. The JVM never stores the hash until something asks for it, because most objects are never hashed and the bits are needed for other duties (locking, age). Same word, new meaning, one call later.
+*(All hex values vary per run.)* One `identityHashCode` call — which the program never even prints — rewrote the word: the tag bits still read `01` (unlocked), but a hash now occupies the upper bits and JOL's annotation changed to `hash: 0x3dc97850`. The JVM never stores the hash until something asks for it, because most objects are never hashed and the bits are needed for other duties (locking, age). Same word, new meaning, one call later.
 
 One honesty note for the truly observant: if you print the `int` that `identityHashCode` *returns* and compare it with the hash JOL decodes from the mark word, the two numbers do not match on this JDK build. JOL 0.17 predates JDK 25 by more than two years, and the mark word's bit packing is HotSpot's private format, free to shift under it. The offsets and sizes — everything this lesson teaches — are read from raw memory and do not depend on that decode; treat JOL's parenthesised annotations as its best interpretation, and the offset table as ground truth.
 
@@ -308,10 +312,12 @@ public class FieldOrder {
 
 ```bash
 javac -cp "$JAR" FieldOrder.java
-java -cp ".:$JAR" FieldOrder
+java --sun-misc-unsafe-memory-access=allow -cp ".:$JAR" FieldOrder
 ```
 
 ```text
+# WARNING: Unable to get Instrumentation. Dynamic Attach failed. You may add this JAR as -javaagent manually, or supply -Djdk.attach.allowAttachSelf
+# WARNING: Unable to attach Serviceability Agent. You can try again with escalated privileges. Two options: a) use -Djol.tryWithSudo=true to try with sudo; b) echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
 FieldOrder$ByteIntByte object internals:
 OFF  SZ   TYPE DESCRIPTION               VALUE
   0   8        (object header: mark)     0x0000000000000001 (non-biasable; age: 0)
