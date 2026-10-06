@@ -7,7 +7,7 @@
 **33 lessons · a quiz in every lesson · one final exam**
 
 [![Java](https://img.shields.io/badge/Java-25_LTS-f0196a?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
-[![Lessons](https://img.shields.io/badge/lessons-12_of_33-f0196a?style=for-the-badge&logo=bookstack&logoColor=white)](lessons/README.md)
+[![Lessons](https://img.shields.io/badge/lessons-18_of_33-f0196a?style=for-the-badge&logo=bookstack&logoColor=white)](lessons/README.md)
 [![Sequel](https://img.shields.io/badge/sequel_to-concurreny--multithreading-12121f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Dancan254/concurreny-multithreading)
 
 [**Start the course →**](lessons/README.md) &nbsp;·&nbsp; [Course index](lessons/README.md) &nbsp;·&nbsp; [The concurrency course ←](https://github.com/Dancan254/concurreny-multithreading)
@@ -109,17 +109,17 @@ flowchart LR
 
 </details>
 
-<details>
-<summary><b>Part 3 · Memory</b> — coming soon</summary>
+<details open>
+<summary><b>Part 3 · Memory</b></summary>
 
 | # | Lesson | You'll learn |
 |:-:|---|---|
-| 12 | Runtime data areas — *coming soon* | Heap, stack, Metaspace, PC register; every `OutOfMemoryError` flavor triggered on purpose |
-| 13 | Object layout (JOL) — *coming soon* | Mark word, klass word, fields, padding, alignment |
-| 14 | Compressed oops — *coming soon* | OOP encoding; the 32 GB heap boundary |
-| 15 | Escape analysis & scalar replacement — *coming soon* | Allocations that never reach the heap |
-| 16 | String internals — *coming soon* | Compact strings (JEP 254); the string pool; `intern()` |
-| 17 | Off-heap memory — *coming soon* | Direct buffers; `-XX:NativeMemoryTracking` |
+| 12 | [Runtime data areas](lessons/part-3-memory/12-runtime-data-areas.md) | Heap, stack, Metaspace, PC register; every `OutOfMemoryError` flavor triggered on purpose |
+| 13 | [Object layout (JOL)](lessons/part-3-memory/13-object-layout-jol.md) | Mark word, klass word, fields, padding, alignment |
+| 14 | [Compressed oops](lessons/part-3-memory/14-compressed-oops.md) | OOP encoding; the 32 GB heap boundary |
+| 15 | [Escape analysis & scalar replacement](lessons/part-3-memory/15-escape-analysis.md) | Allocations that never reach the heap |
+| 16 | [String internals](lessons/part-3-memory/16-string-internals.md) | Compact strings (JEP 254); the string pool; `intern()` |
+| 17 | [Off-heap memory](lessons/part-3-memory/17-off-heap-memory.md) | Direct buffers; `-XX:NativeMemoryTracking` |
 
 </details>
 

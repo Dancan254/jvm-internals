@@ -20,7 +20,7 @@ You have spent four lessons *reading* bytecode: the constant pool, the operand s
 
 Most of these tools use Byte Buddy or ASM under the hood. This lesson uses **ASM** — the lowest-level, closest-to-the-metal library — because it has no abstractions hiding the class file from you. When you write a class with ASM, every constant-pool entry, every access flag and every instruction is a call *you* made. If you can generate a class by hand, reading one will never scare you again.
 
-This is also the one lesson in Parts 0–1 that needs a third-party library, so it is the reason the course has a single Maven module: `labs/`. Lessons 13 (JOL) and 22 (JMH) will add their dependencies to the same module later.
+This is also the one lesson in Parts 0–1 that needs a third-party library, so it is the reason the course has a single Maven module: `labs/`. [Lesson 13](../part-3-memory/13-object-layout-jol.md) (JOL) has since added its dependency to the same module; Lesson 22 (JMH) will follow.
 
 ---
 
@@ -92,7 +92,7 @@ Note that `defineClass` never touches the disk. Writing `Greet.class` is purely 
 
 ### 1. The `labs/` module
 
-Everything in Parts 0–1 so far ran as `java File.java`. This lesson needs ASM, a third-party jar, so it lives in the course's only Maven module, `labs/`. Its `pom.xml` declares Java 25, the single ASM dependency, and the `exec-maven-plugin` so `mvn exec:java` knows which `main` to run:
+Everything in Parts 0–1 so far ran as `java File.java`. This lesson needs ASM, a third-party jar, so it lives in the course's only Maven module, `labs/`. Its `pom.xml` declares Java 25, the ASM dependency (JOL joined it in [Lesson 13](../part-3-memory/13-object-layout-jol.md)), and the `exec-maven-plugin` so `mvn exec:java` knows which `main` to run. The plugin's main class is routed through an `exec.mainClass` property — the default is Lesson 13's JOL tour, and this lesson's demo is selected with a command-line override:
 
 `labs/pom.xml`:
 
@@ -111,6 +111,7 @@ Everything in Parts 0–1 so far ran as `java File.java`. This lesson needs ASM,
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <exec.mainClass>org.javaguy.labs.jol.LayoutTour</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -118,6 +119,11 @@ Everything in Parts 0–1 so far ran as `java File.java`. This lesson needs ASM,
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
             <version>9.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <version>0.17</version>
         </dependency>
     </dependencies>
 
@@ -128,7 +134,7 @@ Everything in Parts 0–1 so far ran as `java File.java`. This lesson needs ASM,
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>org.javaguy.labs.asm.GeneratedGreeter</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                 </configuration>
             </plugin>
         </plugins>
@@ -210,10 +216,10 @@ Read `buildGreetClass()` top to bottom and notice the shape: *class header, cons
 From the `labs/` directory:
 
 ```bash
-cd labs && mvn -q compile exec:java
+cd labs && mvn -q compile exec:java -Dexec.mainClass=org.javaguy.labs.asm.GeneratedGreeter
 ```
 
-`mvn -q` is quiet mode — Maven prints only warnings, errors and your program's own output. `compile` compiles the module; `exec:java` runs the `mainClass` from the POM in the same JVM Maven is already running.
+`mvn -q` is quiet mode — Maven prints only warnings, errors and your program's own output. `compile` compiles the module; `exec:java` runs the main class in the same JVM Maven is already running. The POM's `exec.mainClass` property defaults to Lesson 13's JOL tour, so the `-Dexec.mainClass=...` override points this run at the ASM demo.
 
 ```text
 WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
@@ -303,7 +309,7 @@ Trace the wiring once, because this is the whole point of Part 1:
 
 ## Try it yourself
 
-1. Change the greeting, re-run `mvn -q compile exec:java`, and check with `javap -v Greet.class` that the pool now holds the new string. Then change *only* the call site — emit two `visitLdcInsn`/`visitMethodInsn` pairs so `main` prints two lines. Predict the new `stack=` before you look.
+1. Change the greeting, re-run the same `mvn -q compile exec:java -Dexec.mainClass=org.javaguy.labs.asm.GeneratedGreeter` command, and check with `javap -v Greet.class` that the pool now holds the new string. Then change *only* the call site — emit two `visitLdcInsn`/`visitMethodInsn` pairs so `main` prints two lines. Predict the new `stack=` before you look.
 2. Add a field: `cw.visitField(ACC_PRIVATE | ACC_FINAL, "name", "Ljava/lang/String;", null, null)` — then initialize it in the constructor. What new constant-pool entries appear? What happens to `fields: 0` in the `javap -v` header?
 3. Remove `ClassWriter.COMPUTE_FRAMES` (use `new ClassWriter(0)`) and re-run. The class now fails to load — with the placeholder `visitMaxs(0, 0)` values nothing recomputes `max_stack`/`max_locals`, and the JVM rejects the class at define time. Passing the real values (`1, 1` for the constructor, `2, 1` for `main` — [Lesson 03](03-the-operand-stack.md) taught you to compute them) is enough to fix it, because this class has no branches. Stack-map frames only become necessary where control flow merges: add a branch (for example an `if` on `args.length`) and watch real `visitMaxs` values stop being sufficient... or just put `COMPUTE_FRAMES` back and appreciate it.
 4. Emit `ACC_FINAL` on the class and try to make a subclass of `Greet` with a second `ClassWriter`. Watch the verifier reject it.
@@ -375,7 +381,7 @@ Purely for inspection. The `byte[]` goes straight from `toByteArray()` into the 
 <details>
 <summary>Reveal answer</summary>
 
-ASM is a third-party dependency, and the course rule is that third-party code lives in exactly one place: `labs/`. Everything else runs as `java File.java` on `java.base` alone. The same module will host JOL (Lesson 13) and JMH (Lesson 22), so the one-time Maven setup gets reused.
+ASM is a third-party dependency, and the course rule is that third-party code lives in exactly one place: `labs/`. Everything else runs as `java File.java` on `java.base` alone. The same module now also hosts JOL ([Lesson 13](../part-3-memory/13-object-layout-jol.md)) and will host JMH (Lesson 22), so the one-time Maven setup gets reused.
 
 </details>
 
