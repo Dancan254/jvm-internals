@@ -12,6 +12,7 @@
     <properties>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <exec.mainClass>org.javaguy.labs.jol.LayoutTour</exec.mainClass>
     </properties>
 
     <dependencies>
@@ -19,6 +20,11 @@
             <groupId>org.ow2.asm</groupId>
             <artifactId>asm</artifactId>
             <version>9.8</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jol</groupId>
+            <artifactId>jol-core</artifactId>
+            <version>0.17</version>
         </dependency>
     </dependencies>
 
@@ -29,7 +35,7 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.5.0</version>
                 <configuration>
-                    <mainClass>org.javaguy.labs.asm.GeneratedGreeter</mainClass>
+                    <mainClass>${exec.mainClass}</mainClass>
                 </configuration>
             </plugin>
         </plugins>
