@@ -91,11 +91,15 @@ One collector footnote, verified below: selecting ZGC turns compressed oops *off
 
 ## Hands-on
 
-Every demo here is diagnostics-driven: no big heaps, nothing unbounded. The boundary exploration runs **flags-only** — we ask the JVM how it *would* configure itself for a 40 GB heap on this 38 GB machine, without ever allocating one.
+Every demo here is diagnostics-driven: no big heaps, nothing unbounded. The boundary exploration runs **flags-only** — we ask the JVM how it *would* configure itself for a 40 GB heap on this 38 GB machine, without ever allocating one. All commands run from the usual samples directory:
+
+```bash
+cd ~/jvm-internals-samples/lesson14
+```
 
 ### 1. Flags only: watching ergonomics decide
 
-First use in this course for `-XX:+PrintFlagsFinal`, so the full explanation. HotSpot has hundreds of `-XX:` flags; each has a default value, some get adjusted by ergonomics at startup, and some you set yourself. `-XX:+PrintFlagsFinal` prints **every flag with its final resolved value** and a tag saying where the value came from: `{default}`, `{ergonomic}` or `{command line}`. Pair it with `-version`, which makes the JVM print its version banner and **exit before any application code (or heap) exists** — the combination means "show me your configuration for this command line, without running anything." It is the safest instrument in this course: all the power of a 40 GB JVM, none of the RAM.
+[Lesson 12](12-runtime-data-areas.md) owns this flag's introduction: `-XX:+PrintFlagsFinal` prints every HotSpot flag with its final resolved value and a `{default}`/`{ergonomic}`/`{command line}` tag for where the value came from. What's new here is the pairing: add `-version` and the JVM prints its banner and **exits before any application code (or heap) exists** — the combination means "show me your configuration for this command line, without running anything." It is the safest instrument in this course: all the power of a 40 GB JVM, none of the RAM.
 
 `-Xmx` caps the heap — lesson 12's heap OOM demo uses it to bound the heap small; here we use it to *ask* about big heaps. (`-version` goes to stderr; the `2>/dev/null` just keeps the banner out of our grep.)
 
