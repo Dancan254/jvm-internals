@@ -58,11 +58,11 @@ Every lesson ends with exercises, the **common mistakes that bite in production*
 ```mermaid
 flowchart LR
     P0["Part 0<br/>The machine"] --> P1["Part 1<br/>Bytecode"]
-    P1 --> P2["Part 2<br/>Classloading"]
+    P1 --> P2["Part 2<br/>Classloading & linking"]
     P2 --> P3["Part 3<br/>Memory"]
     P3 --> P4["Part 4<br/>Execution engine"]
     P4 --> P5["Part 5<br/>Garbage collection"]
-    P5 --> P6["Part 6<br/>Observability"]
+    P5 --> P6["Part 6<br/>Observability & sharp edges"]
 
     style P0 fill:#12121f,stroke:#f0196a,color:#fff
     style P1 fill:#12121f,stroke:#f0196a,color:#fff

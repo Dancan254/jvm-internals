@@ -11,7 +11,7 @@
 
 ## Why this matters
 
-Every method you have ever written runs the same way underneath: a small workspace of numbered **local variable slots**, and a scratch **operand stack** that every instruction pushes to and pops from. Once you can see that machinery, `javap -c` output stops being noise and starts being a story you can read. That skill is the foundation for the rest of Part 1: invocation opcodes (Lesson 04), `invokedynamic` (Lesson 05) and generating bytecode with ASM (Lesson 06) all assume you can trace the stack. It also pays off in production: the "frames" in a `StackOverflowError`, the slot numbering in a debugger, and the verifier errors you get from a badly woven agent are all this same model.
+Every method you have ever written runs the same way underneath: a small workspace of numbered **local variable slots**, and a scratch **operand stack** that every instruction pushes to and pops from. Once you can see that machinery, `javap -c` output stops being noise and starts being a story you can read. That skill is the foundation for the rest of Part 1: invocation opcodes ([Lesson 04](04-invocation-opcodes.md)), `invokedynamic` ([Lesson 05](05-invokedynamic.md)) and generating bytecode with ASM ([Lesson 06](06-generating-bytecode-with-asm.md)) all assume you can trace the stack. It also pays off in production: the "frames" in a `StackOverflowError`, the slot numbering in a debugger, and the verifier errors you get from a badly woven agent are all this same model.
 
 ---
 
@@ -86,13 +86,13 @@ So `javac` computes both numbers at compile time and writes them into the method
 - **`max_locals`** — the number of local variable slots the method needs (parameters plus declared locals, counting `long`/`double` as two).
 - **`max_stack`** — the deepest the operand stack ever gets at any point in the method.
 
-`javac` derives `max_stack` by simulating exactly the trace you will do by hand below: walk the instructions, track the stack depth, remember the maximum. The JVM's **bytecode verifier** then re-checks these claims when the class is loaded, along with type correctness of every slot and stack entry. A class file that lies about `max_stack`, or that feeds an `int` to a reference-expecting instruction, is rejected before a single instruction executes. This is what lets the JVM run untrusted bytecode without trusting the compiler that produced it — a property languages like Kotlin, Scala and ASM-generated code (Lesson 06) all lean on.
+`javac` derives `max_stack` by simulating exactly the trace you will do by hand below: walk the instructions, track the stack depth, remember the maximum. The JVM's **bytecode verifier** then re-checks these claims when the class is loaded, along with type correctness of every slot and stack entry. A class file that lies about `max_stack`, or that feeds an `int` to a reference-expecting instruction, is rejected before a single instruction executes. This is what lets the JVM run untrusted bytecode without trusting the compiler that produced it — a property languages like Kotlin, Scala and ASM-generated code ([Lesson 06](06-generating-bytecode-with-asm.md)) all lean on.
 
 ---
 
 ## Hands-on
 
-Part 1 uses explicitly declared classes compiled with `javac`, because compact source files (`void main()`) hide the class declaration we want to dissect (Lesson 02). Every command below is run from the directory containing the file.
+Part 1 uses explicitly declared classes compiled with `javac`, because compact source files (`void main()`) hide the class declaration we want to dissect ([Lesson 02](02-anatomy-of-a-class-file.md)). Every command below is run from the directory containing the file.
 
 ### 1. Write, compile, run
 
@@ -123,7 +123,7 @@ java StackMath
 
 ### 2. Disassemble it
 
-`javap` was introduced in Lesson 00. The `-c` flag disassembles: it prints the bytecode of every method instead of just their signatures.
+`javap` was introduced in [Lesson 00](../part-0-the-machine/00-setup-and-toolchain.md). The `-c` flag disassembles: it prints the bytecode of every method instead of just their signatures.
 
 ```bash
 javap -c StackMath
@@ -163,7 +163,7 @@ public class StackMath {
 }
 ```
 
-Three methods, and you never wrote one of them. `javac` always emits a constructor (here the default one, calling `Object.<init>` via `invokespecial` — an invocation opcode you'll dissect in Lesson 04). The `#1`, `#7`, `#13`, `#19` numbers are indexes into the **constant pool** from Lesson 02; the `//` comments are `javap` resolving them for you.
+Three methods, and you never wrote one of them. `javac` always emits a constructor (here the default one, calling `Object.<init>` via `invokespecial` — an invocation opcode you'll dissect in [Lesson 04](04-invocation-opcodes.md)). The `#1`, `#7`, `#13`, `#19` numbers are indexes into the **constant pool** from [Lesson 02](02-anatomy-of-a-class-file.md); the `//` comments are `javap` resolving them for you.
 
 The numbers on the left (`0:`, `1:`, `3:` …) are **byte offsets** into the method's bytecode array, not line numbers. They skip values because instructions have different lengths: `iload_0` is one byte, but `getstatic #7` is three (one opcode byte plus a two-byte constant-pool index), which is why `main` jumps from `0:` to `3:`.
 
@@ -196,7 +196,7 @@ Now check your answer. The `-v` (verbose) flag makes `javap` print the `Code` at
 javap -v StackMath
 ```
 
-The full output repeats the constant pool from Lesson 02; here is the section for `compute`:
+The full output repeats the constant pool from [Lesson 02](02-anatomy-of-a-class-file.md); here is the section for `compute`:
 
 ```
   static int compute(int, int, int);

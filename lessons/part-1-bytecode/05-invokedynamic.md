@@ -11,7 +11,7 @@
 
 ## Why this matters
 
-Lesson 04 gave you four invocation opcodes, and each one bakes in a fixed rule: `invokevirtual` dispatches on the receiver's class, `invokespecial` calls exactly this method, `invokestatic` calls exactly this static method, `invokeinterface` searches the receiver's interface table. In every case `javac` names a concrete method in a concrete class, and the JVM's job is to resolve that name.
+[Lesson 04](04-invocation-opcodes.md) gave you four invocation opcodes, and each one bakes in a fixed rule: `invokevirtual` dispatches on the receiver's class, `invokespecial` calls exactly this method, `invokestatic` calls exactly this static method, `invokeinterface` searches the receiver's interface table. In every case `javac` names a concrete method in a concrete class, and the JVM's job is to resolve that name.
 
 Now look at a lambda:
 
@@ -31,7 +31,7 @@ Both problems need the same thing: **an invocation whose target is decided by co
 
 ### The fifth invocation opcode
 
-`invokedynamic` was added in JDK 7 (JSR 292), originally to support dynamic languages on the JVM. Unlike the four opcodes from Lesson 04, it does **not** name a method to call. It names a *bootstrap method*: an ordinary Java method that the JVM runs **once**, the first time execution reaches that call site. The bootstrap method decides what the call site should actually do and returns a `CallSite` object wrapping a `MethodHandle` — a directly callable reference to the real target.
+`invokedynamic` was added in JDK 7 (JSR 292), originally to support dynamic languages on the JVM. Unlike the four opcodes from [Lesson 04](04-invocation-opcodes.md), it does **not** name a method to call. It names a *bootstrap method*: an ordinary Java method that the JVM runs **once**, the first time execution reaches that call site. The bootstrap method decides what the call site should actually do and returns a `CallSite` object wrapping a `MethodHandle` — a directly callable reference to the real target.
 
 ```mermaid
 flowchart TD
@@ -51,7 +51,7 @@ flowchart TD
 
 The one-time bootstrap cost is paid once per call site; after that the call is as direct as any other, and the JIT can inline through it. The linkage decision is **deferred from compile time to runtime** — and made by ordinary Java code shipped in the JDK, which means a newer JDK can link the same old bytecode a better way.
 
-In the constant pool you saw in Lesson 02, an `invokedynamic` instruction points at an `InvokeDynamic` entry, which points into a `BootstrapMethods` attribute at the end of the class file. You will read both below.
+In the constant pool you saw in [Lesson 02](02-anatomy-of-a-class-file.md), an `invokedynamic` instruction points at an `InvokeDynamic` entry, which points into a `BootstrapMethods` attribute at the end of the class file. You will read both below.
 
 ### Lambdas: `LambdaMetafactory`
 
@@ -66,7 +66,7 @@ On first execution, `LambdaMetafactory` spins a small hidden class in memory tha
 
 Since JDK 9, `javac` compiles `"a" + x + "b"` into an `invokedynamic` whose bootstrap method is `java.lang.invoke.StringConcatFactory.makeConcatWithConstants`. The constant parts of the expression are stored as a **recipe** string in the constant pool, with `\u0001` placeholders where the dynamic values go. At runtime the JDK picks a concatenation strategy — sizing the result exactly, avoiding intermediate `StringBuilder` objects, emitting code the JIT can optimise — and it can switch strategies via a system property, without recompiling your code.
 
-### What Lesson 04's opcodes would have required
+### What [Lesson 04](04-invocation-opcodes.md)'s opcodes would have required
 
 | | With only the four classic opcodes | With `invokedynamic` |
 |---|---|---|
@@ -78,7 +78,7 @@ Since JDK 9, `javac` compiles `"a" + x + "b"` into an `invokedynamic` whose boot
 
 ## Hands-on
 
-Part 1 lessons use explicitly declared classes compiled with `javac`, so the class declaration we're dissecting is visible in the source. `javap -v` was introduced in Lesson 02; the new flag here is `-p`, which shows `private` members — you need it because `javac` compiles the lambda body into a `private` synthetic method that the default output hides.
+Part 1 lessons use explicitly declared classes compiled with `javac`, so the class declaration we're dissecting is visible in the source. `javap -v` was introduced in [Lesson 02](02-anatomy-of-a-class-file.md); the new flag here is `-p`, which shows `private` members — you need it because `javac` compiles the lambda body into a `private` synthetic method that the default output hides.
 
 ### 1. A lambda's call site
 
@@ -109,7 +109,7 @@ javac LambdaLinkage.java
 java LambdaLinkage
 ```
 
-Two runs:
+Running it twice (to show what varies):
 
 ```
 class LambdaLinkage$$Lambda/0x0000000043040210
@@ -150,7 +150,7 @@ Inside `main`, the lambda is one instruction (constant pool and other methods om
         21: return
 ```
 
-Read offset `4` carefully. The descriptor is `(I)Ljava/util/function/IntUnaryOperator;`: it takes one `int` and **returns an `IntUnaryOperator`**. This `invokedynamic` doesn't *run* the lambda — it *manufactures the object*. The `int` it consumes is `base`, pushed by `iload_1` just before: captured variables are passed into the generated class at the call site. The lambda is actually *invoked* later, inside `applyTwice`, by an ordinary `invokeinterface` on `applyAsInt` — Lesson 04's opcode, because by then `op` is just an object implementing an interface.
+Read offset `4` carefully. The descriptor is `(I)Ljava/util/function/IntUnaryOperator;`: it takes one `int` and **returns an `IntUnaryOperator`**. This `invokedynamic` doesn't *run* the lambda — it *manufactures the object*. The `int` it consumes is `base`, pushed by `iload_1` just before: captured variables are passed into the generated class at the call site. The lambda is actually *invoked* later, inside `applyTwice`, by an ordinary `invokeinterface` on `applyAsInt` — [Lesson 04](04-invocation-opcodes.md)'s opcode, because by then `op` is just an object implementing an interface.
 
 At the bottom of the output, the `BootstrapMethods` attribute says who manufactures the object *(details may differ across JDK 25 builds)*:
 
@@ -239,7 +239,7 @@ javap -v StringConcat
         39: return
 ```
 
-This one method shows both eras side by side. The `StringBuilder` *you* wrote is compiled the old way — `new`, `dup`, `invokespecial`, `invokevirtual append` (offsets 0–7 and 22), straight out of Lesson 04. But the `"a" + x + "b"` *expression* is a single `invokedynamic` at offset 17: it takes the `int x` and returns a finished `String`. No `StringBuilder` is allocated for it at all.
+This one method shows both eras side by side. The `StringBuilder` *you* wrote is compiled the old way — `new`, `dup`, `invokespecial`, `invokevirtual append` (offsets 0–7 and 22), straight out of [Lesson 04](04-invocation-opcodes.md). But the `"a" + x + "b"` *expression* is a single `invokedynamic` at offset 17: it takes the `int x` and returns a finished `String`. No `StringBuilder` is allocated for it at all.
 
 The `BootstrapMethods` attribute *(details may differ across JDK 25 builds)*:
 
@@ -270,8 +270,8 @@ Same bytecode, same output, different linkage: `BC_SB` asks for the old-style `S
 
 ## Try it yourself
 
-1. Change the lambda to capture nothing: `x -> x + 1`. Recompile and run `javap -c -p LambdaLinkage`. What happened to the call-site descriptor `(I)Ljava/util/function/IntUnaryOperator;`, and why?
-2. Add a second, different lambda to `main`. How many entries does `BootstrapMethods` have now? How many `lambda$main$N` methods?
+1. Change the lambda to capture nothing: `x -> x + 1`. Recompile and run `javap -v -p LambdaLinkage`. What happened to the call-site descriptor `(I)Ljava/util/function/IntUnaryOperator;`, and why?
+2. Add a second, different lambda to `main` and re-run `javap -v -p LambdaLinkage` (you need `-v` for the `BootstrapMethods` attribute). How many entries does `BootstrapMethods` have now? How many `lambda$main$N` methods?
 3. Write `s = s + x` inside the loop (accumulating into a `String`) instead of `result.append(...)`. Run `javap -c` and find the `makeConcatWithConstants` call site. It is still fast per iteration — so why is the loop as a whole still slow? (Hint: what is the recipe's input each time?)
 4. Compile `public record Point(int x, int y) {}` and run `javap -v Point`. Which bootstrap method generates `toString`, `equals` and `hashCode`, and what does that tell you about how records avoid boilerplate *bytecode*?
 
@@ -341,7 +341,7 @@ It is a format string for the concatenation `"a" + x + "b"`: the literal charact
 - `invokedynamic` is the fifth invocation opcode. It defers linkage to runtime: a **bootstrap method** runs once, returns a `CallSite` holding a `MethodHandle`, and that target is cached for every later call.
 - Lambdas are a static synthetic method (`lambda$main$0`) plus one `invokedynamic` call site bootstrapped by `LambdaMetafactory.metafactory`, which spins the interface implementation at runtime. No class file per lambda; captured variables are passed in at the call site.
 - Since JDK 9 (JEP 280), `"a" + x + "b"` is one `invokedynamic` bootstrapped by `StringConcatFactory.makeConcatWithConstants`, with the constants stored as a recipe (`a\u0001b`). The runtime picks the strategy — that's why `+` got fast, and why it keeps getting faster without recompiling.
-- Compared with Lesson 04's four opcodes, the difference is *who decides the target and when*: `javac` once forever, versus a bootstrap method at first execution.
+- Compared with [Lesson 04](04-invocation-opcodes.md)'s four opcodes, the difference is *who decides the target and when*: `javac` once forever, versus a bootstrap method at first execution.
 - `invokedynamic` is general machinery, not a lambda feature: records, pattern switches and dynamic-language runtimes link through it too.
 
 **Previous: [Lesson 04, The invocation opcodes](04-invocation-opcodes.md)** · **Next: [Lesson 06, Generating bytecode with ASM](06-generating-bytecode-with-asm.md)**

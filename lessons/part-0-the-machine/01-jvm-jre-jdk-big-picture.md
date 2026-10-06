@@ -100,6 +100,8 @@ flowchart TB
     style NI fill:#12121f,stroke:#f0196a,color:#fff
 ```
 
+*(Highlighted in pink: the JIT compiler and the garbage collector — the execution-engine internals Parts 4–5 are devoted to.)*
+
 One sentence per subsystem, and where this course dissects it:
 
 | Subsystem | What it does | Covered in |
@@ -174,18 +176,18 @@ The spec-vs-implementation story from this lesson is sitting right there in thre
 
 Two more lines worth bookmarking for later lessons:
 
-- `java.class.version = 69.0` — the `.class` file format version this JVM accepts. Major version 69 means Java 25 (52 was Java 8; add one per release). Lesson 02 opens a class file and reads this number from its first bytes.
+- `java.class.version = 69.0` — the `.class` file format version this JVM accepts. Major version 69 means Java 25 (52 was Java 8; add one per release). [Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md) opens a class file and reads this number from its first bytes.
 - `java.vm.compressedOopsMode = Zero based` — compressed ordinary object pointers, the trick that keeps references 32 bits wide on a 64-bit JVM. Lesson 14 is devoted to it.
 
 ### 2. Watching the classloader subsystem wake up
 
-Time for the teaser that Part 2 will fully answer. Run the `HelloJvm.java` sample from [lesson 00](00-setup-and-toolchain.md) (recreate it in an empty directory if you no longer have it — it is one `IO.println` in a compact `void main()`) with classloading logging switched on:
+Time for the teaser that Part 2 will fully answer. Run the `HelloJvm.java` sample from [lesson 00](00-setup-and-toolchain.md) — recreate it in an empty directory if you no longer have it — with classloading logging switched on:
 
 ```bash
 java -verbose:class HelloJvm.java 2>&1 | head -15
 ```
 
-- `-verbose:class` — the legacy flag for "log every class as it is loaded". Since JDK 9 it is an alias for the unified-logging option `-Xlog:class+load`, which is why the output arrives in the `[time][level][tags]` format. (Lesson 00 introduced the `-Xlog` family; Part 2 uses `class+load` constantly.)
+- `-verbose:class` — the legacy flag for "log every class as it is loaded". Since JDK 9 it is an alias for the unified-logging option `-Xlog:class+load`, which is why the output arrives in the `[time][level][tags]` format. ([Lesson 00](00-setup-and-toolchain.md) introduced the `-Xlog` family; Part 2 uses `class+load` constantly.)
 - `2>&1 | head -15` — same redirect as before; keep the first 15 lines only. *First ~15 lines of a run:*
 
 ```
@@ -208,24 +210,24 @@ java -verbose:class HelloJvm.java 2>&1 | head -15
 
 *(Timestamps, ordering and exact set vary between runs and machines.)*
 
-Your program is one line long, yet the classloader subsystem is already busy before `main` exists. How busy? Count the whole run:
+Your program is four `IO.println` calls, yet the classloader subsystem is already busy before `main` exists. How busy? Count the whole run:
 
 ```bash
 java -verbose:class HelloJvm.java 2>&1 | grep -c "class,load"
 ```
 
 ```
-2518
+2535
 ```
 
-Roughly **2,500 classes loaded** to print one line of text. And your own class is last, long after the JDK's:
+Roughly **2,500 classes loaded** to print four lines of text. And your own class is last, long after the JDK's:
 
 ```bash
 java -verbose:class HelloJvm.java 2>&1 | grep "HelloJvm"
 ```
 
 ```
-[2.114s][info][class,load] HelloJvm source: file:/tmp/jvm-internals-task-3/HelloJvm.java
+[2.278s][info][class,load] HelloJvm source: file:/tmp/jvm-internals-task-9/lesson01-recapture/HelloJvm.java
 ```
 
 *(Timestamp and path vary.)*
@@ -302,7 +304,7 @@ Metaspace is one of the **runtime data areas** — the one holding class metadat
 <details>
 <summary>Reveal answer</summary>
 
-`-X` and `-XX:` flags are **not part of the JVM specification** — they are HotSpot-specific extensions. Another implementation (OpenJ9) or a future JDK is free to not support them or to change their behaviour. Standard flags like `-version` are specified; `-X` flags are one implementation's dials.
+`-X` and `-XX:` flags are **not part of the JVM specification** — they are HotSpot-specific extensions. Another implementation (OpenJ9) or a future JDK is free to not support them or to change their behaviour. Options like `-version` are documented standard options of the `java` launcher; `-X` flags are one implementation's dials.
 
 </details>
 

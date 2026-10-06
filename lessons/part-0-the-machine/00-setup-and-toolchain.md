@@ -13,7 +13,7 @@
 
 This course is *run, don't read*. We disassemble class files, watch the JIT compile hot methods, fill the heap on purpose and interrogate a live JVM while it struggles. All of that happens with tools that ship inside the JDK you already have. No Maven, no IDE, no third-party installs — but only if the toolchain actually works on your machine. This lesson proves it does, and puts names on the instruments you'll see in all 33 lessons.
 
-It is the sequel to [Java Concurrency & Multithreading](https://github.com/Dancan254/concurreny-multithreading). You are assumed to be comfortable with everything in it — including running single-file Java 25 samples, which its [Lesson 00](https://github.com/Dancan254/concurreny-multithreading) covers in detail. We recap the one command here and then move on to the new tools.
+It is the sequel to [Java Concurrency & Multithreading](https://github.com/Dancan254/concurreny-multithreading). You are assumed to be comfortable with everything in it — including running single-file Java 25 samples, which [its setup lesson](https://github.com/Dancan254/concurreny-multithreading) covers in detail. We recap the one command here and then move on to the new tools.
 
 ---
 
@@ -163,9 +163,9 @@ final class HelloJvm {
 
 (Constant-pool indexes like `#7` and `#23` may differ slightly on your build.) Three things to notice now, all of which get their own lesson:
 
-- Your "classless" file became `final class HelloJvm` with a generated constructor — compact source is sugar, the class file is real. (Lesson 02.)
-- `"Hello" + property` concatenation compiled to `invokedynamic` calling `makeConcatWithConstants`, not to a `StringBuilder` chain. (Lesson 05.)
-- Every `IO.println` is an `invokestatic` against a constant-pool entry. (Lessons 03–04.)
+- Your "classless" file became `final class HelloJvm` with a generated constructor — compact source is sugar, the class file is real. ([Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md).)
+- `"Hello" + property` concatenation compiled to `invokedynamic` calling `makeConcatWithConstants`, not to a `StringBuilder` chain. ([Lesson 05](../part-1-bytecode/05-invokedynamic.md).)
+- Every `IO.println` is an `invokestatic` against a constant-pool entry. (Lessons [03](../part-1-bytecode/03-the-operand-stack.md)–[04](../part-1-bytecode/04-invocation-opcodes.md).)
 
 You don't need to understand a single opcode yet. You just proved your disassembler works.
 
@@ -322,7 +322,7 @@ If you jump into the course mid-way and a flag looks unfamiliar, search the earl
 2. Run `jcmd <pid> GC.class_histogram` against your running `Sleeper` (use `jcmd <pid> help GC.class_histogram` first to see its options). What are the three most common classes by instance count? Part 3 explains what you're looking at.
 3. Run `Allocations` with `-Xlog:gc*` instead of `-Xlog:gc`. What extra tags appear, and why does the `*` form produce so much more?
 4. Send the GC log to a file: `java -Xlog:gc:file=gc.log Allocations.java`. Where did the console output go? When would you want this in production?
-5. Delete `HelloJvm.class`, run `java HelloJvm.java` again, and check the directory: no `.class` file appears. Where do you think the compiled bytecode lives during a source-launcher run? (Lesson 02 answers this properly.)
+5. Delete `HelloJvm.class`, run `java HelloJvm.java` again, and check the directory: no `.class` file appears. Where do you think the compiled bytecode lives during a source-launcher run? ([Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md) answers this properly.)
 
 ---
 
@@ -360,7 +360,7 @@ The source launcher keeps the edit-run loop at one command and one file, which i
 <details>
 <summary>Reveal answer</summary>
 
-Because the *strategy* is chosen at runtime, once, by a bootstrap method — and can improve in future JDKs without recompiling your code. The bytecode just says "concatenate these"; how (array sizing, direct byte writes, compact-string encoding) is decided when the call site first runs. Lesson 05 takes this apart fully.
+Because the *strategy* is chosen at runtime, once, by a bootstrap method — and can improve in future JDKs without recompiling your code. The bytecode just says "concatenate these"; how (array sizing, direct byte writes, compact-string encoding) is decided when the call site first runs. [Lesson 05](../part-1-bytecode/05-invokedynamic.md) takes this apart fully.
 
 </details>
 
@@ -392,4 +392,4 @@ Because the *strategy* is chosen at runtime, once, by a bootstrap method — and
 - Flags are **explained at first use, referenced afterwards** — `-Xlog:gc` was this lesson's.
 - `jcmd -l` includes `jcmd` itself; single-file runs appear as `SourceLauncher`.
 
-**Next: [Lesson 01, JVM, JRE, JDK & the big picture](01-jvm-jre-jdk.md)**
+**Next: [Lesson 01, JVM, JRE, JDK & the big picture](01-jvm-jre-jdk-big-picture.md)**

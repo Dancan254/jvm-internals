@@ -28,9 +28,9 @@ This is also the one lesson in Parts 0–1 that needs a third-party library, so 
 
 ### The visitor API is the class file, in method-call form
 
-In Lesson 02 you saw that a `.class` file is a strict sequence of sections: magic number, version, constant pool, access flags, this/super class, interfaces, fields, methods, attributes. ASM's `ClassWriter` has one `visitXxx` method per section, and you call them in the same order:
+In [Lesson 02](02-anatomy-of-a-class-file.md) you saw that a `.class` file is a strict sequence of sections: magic number, version, constant pool, access flags, this/super class, interfaces, fields, methods, attributes. ASM's `ClassWriter` has one `visitXxx` method per section, and you call them in the same order:
 
-| ASM call | Class-file section (Lesson 02) |
+| ASM call | Class-file section ([Lesson 02](02-anatomy-of-a-class-file.md)) |
 |---|---|
 | `cw.visit(version, access, name, sig, super, ifaces)` | major/minor version, access flags, `this_class`, `super_class` |
 | `cw.visitMethod(access, name, descriptor, ...)` | an entry in the `methods` table |
@@ -39,7 +39,7 @@ In Lesson 02 you saw that a `.class` file is a strict sequence of sections: magi
 | `mv.visitMaxs(...)` | `max_stack` / `max_locals` in the `Code` attribute |
 | `cw.visitEnd()` | done — `cw.toByteArray()` gives you the finished file as `byte[]` |
 
-There is no separate "constant pool" call. ASM adds constant-pool entries *as a side effect* of the other calls: visit a method named `main` with descriptor `([Ljava/lang/String;)V` and the pool grows `Utf8` entries for both strings, plus a `NameAndType` joining them, exactly as you saw in Lesson 02.
+There is no separate "constant pool" call. ASM adds constant-pool entries *as a side effect* of the other calls: visit a method named `main` with descriptor `([Ljava/lang/String;)V` and the pool grows `Utf8` entries for both strings, plus a `NameAndType` joining them, exactly as you saw in [Lesson 02](02-anatomy-of-a-class-file.md).
 
 ### The bytecode you emit is the bytecode you read
 
@@ -52,11 +52,11 @@ invokevirtual java/io/PrintStream.println ← call on the two stacked operands (
 return
 ```
 
-The default constructor needs `aload_0` (push `this`), `invokespecial java/lang/Object.<init>` (the mandatory super-constructor call, Lesson 04) and `return`.
+The default constructor needs `aload_0` (push `this`), `invokespecial java/lang/Object.<init>` (the mandatory super-constructor call, [Lesson 04](04-invocation-opcodes.md)) and `return`.
 
 ### Computing `max_stack` for you
 
-In Lesson 03 you saw that every `Code` attribute declares `max_stack` and `max_locals`, and you predicted `stack=` by hand. ASM can do that bookkeeping for you: construct the `ClassWriter` with `COMPUTE_FRAMES` and it simulates the operand stack while you emit instructions, fills in the correct `max_stack`/`max_locals`, and inserts the stack-map frames the verifier needs. That is why the calls to `visitMaxs(0, 0)` in the sample pass zeros — with `COMPUTE_FRAMES`, the values are placeholders that ASM overwrites.
+In [Lesson 03](03-the-operand-stack.md) you saw that every `Code` attribute declares `max_stack` and `max_locals`, and you predicted `stack=` by hand. ASM can do that bookkeeping for you: construct the `ClassWriter` with `COMPUTE_FRAMES` and it simulates the operand stack while you emit instructions, fills in the correct `max_stack`/`max_locals`, and inserts the stack-map frames the verifier needs. That is why the calls to `visitMaxs(0, 0)` in the sample pass zeros — with `COMPUTE_FRAMES`, the values are placeholders that ASM overwrites.
 
 ### Getting the bytes into the JVM
 
@@ -198,9 +198,9 @@ public class GeneratedGreeter implements Opcodes {
 }
 ```
 
-Read `buildGreetClass()` top to bottom and notice the shape: *class header, constructor, method, end* — the sections of Lesson 02 in order. Every instruction inside the two methods is one you annotated by hand in Lessons 03 and 04. The only new vocabulary:
+Read `buildGreetClass()` top to bottom and notice the shape: *class header, constructor, method, end* — the sections of [Lesson 02](02-anatomy-of-a-class-file.md) in order. Every instruction inside the two methods is one you annotated by hand in Lessons [03](03-the-operand-stack.md) and [04](04-invocation-opcodes.md). The only new vocabulary:
 
-- **`V25`** — the class-file version to stamp into the header (major version 69, Lesson 02).
+- **`V25`** — the class-file version to stamp into the header (major version 69, [Lesson 02](02-anatomy-of-a-class-file.md)).
 - **`ACC_PUBLIC | ACC_SUPER` / `ACC_STATIC`** — the same access flags `javap -v` prints.
 - **Internal names use slashes** (`java/lang/Object`), descriptors use the cryptic letter codes (`([Ljava/lang/String;)V`) — both exactly as they appear in the constant pool.
 - **`implements Opcodes`** — a convenience so we can write `ALOAD` instead of `Opcodes.ALOAD`.
@@ -233,7 +233,7 @@ Three things to read in that output:
 
 ### 4. Dissect what you generated
 
-The file on disk is a perfectly ordinary class file, so every tool from Lessons 02–04 works on it. From `labs/`:
+The file on disk is a perfectly ordinary class file, so every tool from Lessons [02](02-anatomy-of-a-class-file.md)–[04](04-invocation-opcodes.md) works on it. From `labs/`:
 
 ```bash
 javap -c Greet.class
@@ -256,7 +256,7 @@ public class org.javaguy.labs.asm.Greet {
 }
 ```
 
-Every instruction is one `visitXxx` call from the generator, in the same order. Now `javap -v` (Lesson 02) shows the sections those calls produced — trimmed to the interesting parts:
+Every instruction is one `visitXxx` call from the generator, in the same order. Now `javap -v` ([Lesson 02](02-anatomy-of-a-class-file.md)) shows the sections those calls produced — trimmed to the interesting parts:
 
 ```text
 public class org.javaguy.labs.asm.Greet
@@ -297,7 +297,7 @@ Trace the wiring once, because this is the whole point of Part 1:
 - `major version: 69` and the flags `0x0021` came from the single `cw.visit(...)` call.
 - `getstatic #16` resolves through the constant pool to `Fieldref java/lang/System.out` — the entry ASM created when you called `visitFieldInsn`.
 - The greeting lives in the pool exactly once (`#17` is the `Utf8`, `#18` the `String` constant pointing at it), and `ldc #18` loads it.
-- `stack=2` in `main` was **computed by ASM**, not by you. Verify it mentally with Lesson 03's model: after `getstatic` the stack holds one value (`out`), after `ldc` it holds two (`out`, greeting) — that is the peak — and `invokevirtual` pops both. `max_stack = 2`. Correct.
+- `stack=2` in `main` was **computed by ASM**, not by you. Verify it mentally with [Lesson 03](03-the-operand-stack.md)'s model: after `getstatic` the stack holds one value (`out`), after `ldc` it holds two (`out`, greeting) — that is the peak — and `invokevirtual` pops both. `max_stack = 2`. Correct.
 
 ---
 
@@ -305,7 +305,7 @@ Trace the wiring once, because this is the whole point of Part 1:
 
 1. Change the greeting, re-run `mvn -q compile exec:java`, and check with `javap -v Greet.class` that the pool now holds the new string. Then change *only* the call site — emit two `visitLdcInsn`/`visitMethodInsn` pairs so `main` prints two lines. Predict the new `stack=` before you look.
 2. Add a field: `cw.visitField(ACC_PRIVATE | ACC_FINAL, "name", "Ljava/lang/String;", null, null)` — then initialize it in the constructor. What new constant-pool entries appear? What happens to `fields: 0` in the `javap -v` header?
-3. Remove `ClassWriter.COMPUTE_FRAMES` (use `new ClassWriter(0)`) and re-run. You will hit a `VerifyError` — find out why from Lesson 03's stack-map discussion, then fix it by passing real values to `visitMaxs` and adding the frames back... or just put `COMPUTE_FRAMES` back and appreciate it.
+3. Remove `ClassWriter.COMPUTE_FRAMES` (use `new ClassWriter(0)`) and re-run. The class now fails to load — with the placeholder `visitMaxs(0, 0)` values nothing recomputes `max_stack`/`max_locals`, and the JVM rejects the class at define time. Passing the real values (`1, 1` for the constructor, `2, 1` for `main` — [Lesson 03](03-the-operand-stack.md) taught you to compute them) is enough to fix it, because this class has no branches. Stack-map frames only become necessary where control flow merges: add a branch (for example an `if` on `args.length`) and watch real `visitMaxs` values stop being sufficient... or just put `COMPUTE_FRAMES` back and appreciate it.
 4. Emit `ACC_FINAL` on the class and try to make a subclass of `Greet` with a second `ClassWriter`. Watch the verifier reject it.
 5. Instead of `MethodHandles.lookup().defineClass`, load `Greet.class` from disk with a `URLClassLoader`. That is the classic approach — Lesson 09 builds it properly.
 
@@ -313,7 +313,7 @@ Trace the wiring once, because this is the whole point of Part 1:
 
 ## Common mistakes
 
-- **Dots instead of slashes.** ASM wants *internal* names (`java/lang/Object`), not binary names (`java.lang.Object`). Mixing them up produces classes that fail verification with cryptic `ClassFormatError`s.
+- **Dots instead of slashes.** ASM wants *internal* names (`java/lang/Object`), not binary names (`java.lang.Object`). Mixing them up fails fast: a dotted internal name is rejected at define time with a clear `ClassFormatError: Illegal class name`, naming the offending string.
 - **A constructor that never calls `super.<init>`.** The verifier refuses to load the class at `defineClass` time:
 
   ```text
@@ -348,7 +348,7 @@ Because it is defined with `MethodHandles.lookup().defineClass`, which requires 
 <details>
 <summary>Reveal answer</summary>
 
-ASM computed them, because the `ClassWriter` was created with `COMPUTE_FRAMES`. They are right: the stack peaks at two values (`out` and the greeting) just before `invokevirtual`, and the single local slot is the `String[]` parameter. This is the same `max_stack` you predicted by hand in Lesson 03.
+ASM computed them, because the `ClassWriter` was created with `COMPUTE_FRAMES`. They are right: the stack peaks at two values (`out` and the greeting) just before `invokevirtual`, and the single local slot is the `String[]` parameter. This is the same `max_stack` you predicted by hand in [Lesson 03](03-the-operand-stack.md).
 
 </details>
 
@@ -357,7 +357,7 @@ ASM computed them, because the `ClassWriter` was created with `COMPUTE_FRAMES`. 
 <details>
 <summary>Reveal answer</summary>
 
-Purely for inspection. The `byte[]` goes straight from `toByteArray()` into the JVM. The copy on disk lets us run `javap -c` / `javap -v` on the artifact and confirm that what ASM produced is an ordinary class file with the sections from Lesson 02.
+Purely for inspection. The `byte[]` goes straight from `toByteArray()` into the JVM. The copy on disk lets us run `javap -c` / `javap -v` on the artifact and confirm that what ASM produced is an ordinary class file with the sections from [Lesson 02](02-anatomy-of-a-class-file.md).
 
 </details>
 
@@ -366,7 +366,7 @@ Purely for inspection. The `byte[]` goes straight from `toByteArray()` into the 
 <details>
 <summary>Reveal answer</summary>
 
-`getstatic` (push `System.out`) and `ldc` (push the greeting) — field access and constant loads, Lesson 03's operand-stack model. `invokevirtual java/io/PrintStream.println` — Lesson 04's dispatch opcode for an instance method. `return` — the ordinary void-method exit from Lesson 03.
+`getstatic` (push `System.out`) and `ldc` (push the greeting) — field access and constant loads, [Lesson 03](03-the-operand-stack.md)'s operand-stack model. `invokevirtual java/io/PrintStream.println` — [Lesson 04](04-invocation-opcodes.md)'s dispatch opcode for an instance method. `return` — the ordinary void-method exit from Lesson 03.
 
 </details>
 
@@ -383,9 +383,9 @@ ASM is a third-party dependency, and the course rule is that third-party code li
 
 ## Recap
 
-- ASM's `ClassWriter` mirrors the class file section by section: one `visitXxx` per structure from Lesson 02.
-- The instructions you emit are the same opcodes you read in Lessons 03 and 04 — `aload_0`, `getstatic`, `ldc`, `invokespecial`, `invokevirtual`, `return`.
-- `COMPUTE_FRAMES` makes ASM do the `max_stack`/`max_locals` bookkeeping you did by hand in Lesson 03.
+- ASM's `ClassWriter` mirrors the class file section by section: one `visitXxx` per structure from [Lesson 02](02-anatomy-of-a-class-file.md).
+- The instructions you emit are the same opcodes you read in Lessons [03](03-the-operand-stack.md) and [04](04-invocation-opcodes.md) — `aload_0`, `getstatic`, `ldc`, `invokespecial`, `invokevirtual`, `return`.
+- `COMPUTE_FRAMES` makes ASM do the `max_stack`/`max_locals` bookkeeping you did by hand in [Lesson 03](03-the-operand-stack.md).
 - `MethodHandles.lookup().defineClass(bytes)` turns a `byte[]` into a live class in the lookup's package — no disk involved. Writing `Greet.class` was for `javap`'s benefit.
 - `labs/` is the course's one Maven module; ASM is its first dependency.
 

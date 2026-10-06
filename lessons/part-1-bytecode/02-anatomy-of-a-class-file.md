@@ -13,7 +13,7 @@
 
 Every `.java` file you ever wrote ends up as one of these: a binary file the JVM loads, verifies and executes. Most days you never look at it. Then one day production throws `java.lang.UnsupportedClassVersionError: com/acme/Foo has been compiled by a more recent version of the Java Runtime (class file version 65.0)` — and that number, `65.0`, is a field in the first 8 bytes of the file. Or a native tool corrupts a jar and the JVM rejects it before your `main` ever runs, because the magic number is wrong. Or you read a bytecode-level bug report and it talks about "constant pool entry #23".
 
-This lesson makes the `.class` file stop being opaque. Everything else in Part 1 — the operand stack (Lesson 03), the invocation opcodes (Lesson 04), `invokedynamic` (Lesson 05) — is written in the vocabulary you build here.
+This lesson makes the `.class` file stop being opaque. Everything else in Part 1 — the operand stack ([Lesson 03](03-the-operand-stack.md)), the invocation opcodes ([Lesson 04](04-invocation-opcodes.md)), `invokedynamic` ([Lesson 05](05-invokedynamic.md)) — is written in the vocabulary you build here.
 
 ---
 
@@ -87,7 +87,7 @@ Each entry starts with a one-byte tag saying what kind of entry it is, followed 
 | `CONSTANT_Methodref` | A method on a class: a `CONSTANT_Class` + a `CONSTANT_NameAndType`. |
 | `CONSTANT_InterfaceMethodref` | Same, for an interface method. |
 | `CONSTANT_Integer` / `Float` / `Long` / `Double` | Numeric literals. |
-| `CONSTANT_MethodHandle`, `CONSTANT_MethodType`, `CONSTANT_InvokeDynamic` | The machinery of `invokedynamic` — Lesson 05's topic. |
+| `CONSTANT_MethodHandle`, `CONSTANT_MethodType`, `CONSTANT_InvokeDynamic` | The machinery of `invokedynamic` — [Lesson 05](05-invokedynamic.md)'s topic. |
 
 Two consequences worth internalizing now:
 
@@ -187,7 +187,7 @@ You can even see pool contents leaking into the printable column: `java/lang/Obj
 
 ### 3. The full disassembly: `javap -v`
 
-Lesson 00 introduced `javap`, the JDK's bundled class-file disassembler. Here we use its verbose mode: `javap -v Greeting` prints every section of the class file in readable form. Full output, captured from the run above (the file path, modification time and checksum in the header will differ on your machine):
+[Lesson 00](../part-0-the-machine/00-setup-and-toolchain.md) introduced `javap`, the JDK's bundled class-file disassembler. Here we use its verbose mode: `javap -v Greeting` prints every section of the class file in readable form. Full output, captured from the run above (the file path, modification time and checksum in the header will differ on your machine):
 
 ```
 Classfile /tmp/jvm-internals-task-4/Greeting.class
@@ -310,7 +310,7 @@ That is the entire class file, decoded. Now walk it section by section.
 
 Also notice entries like `#33 = Utf8 ConstantValue`, `#34 = Utf8 Code`, `#35 = Utf8 LineNumberTable`: even the *names of attributes* used later in the file are pooled.
 
-**The methods** — each method gets its own `descriptor` (the JVM type signature: `()V` means "no arguments, returns void"; `I` is `int`, `Ljava/lang/String;` is a `String`), its own `flags` (`main` is `0x0009` = `ACC_PUBLIC | ACC_STATIC` = `0x0001 | 0x0008`), and a `Code` attribute holding the actual bytecode. Do not worry about reading the instructions yet — `aload_0`, `putfield`, the operand stack they operate on, and the three different `invoke*` opcodes you can already see are Lessons 03 and 04. For now, just register the pattern: every instruction that touches a name carries a pool index (`putfield #7`, `ldc #19`, `invokevirtual #21`), and `javap` resolves it in the trailing comment.
+**The methods** — each method gets its own `descriptor` (the JVM type signature: `()V` means "no arguments, returns void"; `I` is `int`, `Ljava/lang/String;` is a `String`), its own `flags` (`main` is `0x0009` = `ACC_PUBLIC | ACC_STATIC` = `0x0001 | 0x0008`), and a `Code` attribute holding the actual bytecode. Do not worry about reading the instructions yet — `aload_0`, `putfield`, the operand stack they operate on, and the three different `invoke*` opcodes you can already see are Lessons [03](03-the-operand-stack.md) and [04](04-invocation-opcodes.md). For now, just register the pattern: every instruction that touches a name carries a pool index (`putfield #7`, `ldc #19`, `invokevirtual #21`), and `javap` resolves it in the trailing comment.
 
 The `LineNumberTable` maps bytecode offsets back to source lines — that is how a stack trace knows your crash was on line 8.
 
@@ -318,7 +318,7 @@ The `LineNumberTable` maps bytecode offsets back to source lines — that is how
 
 ### 4. The private fields: `javap -p -v`
 
-Did you notice the fields never appeared? `javap` shows only public and package-private members by default, and both of ours are `private`. Add `-p` (show **all** classes and members, including private ones; flags compose, so `-p -v` is "everything, verbosely"):
+Did you notice the fields never appeared? By default `javap` shows every member except `private` ones, and both of ours are `private`. Add `-p` (show **all** classes and members, including private ones; flags compose, so `-p -v` is "everything, verbosely"):
 
 ```bash
 javap -p -v Greeting
@@ -419,4 +419,4 @@ It's an interface. `ACC_INTERFACE` (`0x0200`) marks it, and every interface is i
 - `javap -v` decodes the whole file; add `-p` or private members stay hidden.
 - Constructors are methods named `<init>`, generated by `javac` when you don't write one.
 
-**Next: Lesson 03 — The operand stack**, where we stop looking at the file's plumbing and start reading the instructions themselves: `aload_0`, `dup`, `iadd`, and what `stack=3, locals=1` really mean.
+**Next: [Lesson 03 — The operand stack](03-the-operand-stack.md)**, where we stop looking at the file's plumbing and start reading the instructions themselves: `aload_0`, `dup`, `iadd`, and what `stack=3, locals=1` really mean.

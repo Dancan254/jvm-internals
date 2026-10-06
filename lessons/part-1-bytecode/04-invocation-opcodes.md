@@ -11,7 +11,7 @@
 
 ## Why this matters
 
-Every method call you have ever written compiles to one of four opcodes. That is not trivia. It is the difference between a call the JVM can resolve to a single exact target while loading the class, and a call whose target is only known when the instruction runs, because it depends on which object is sitting on the operand stack. Once you can look at a line of source and name its opcode, overriding stops being magic, stack traces read differently, and the JIT optimizations in Part 4 (inlining, devirtualization, deoptimization) have something to hang on. This lesson is also the setup for the next one: there is a *fifth* invocation opcode, `invokedynamic`, and it only makes sense as a contrast to the four you learn here.
+Every method call you have ever written compiles to one of four opcodes. That is not trivia. It is the difference between a call whose exact target is fixed in the class file, and a call whose target is only known when the instruction runs, because it depends on which object is sitting on the operand stack. Once you can look at a line of source and name its opcode, overriding stops being magic, stack traces read differently, and the JIT optimizations in Part 4 (inlining, devirtualization, deoptimization) have something to hang on. This lesson is also the setup for the next one: there is a *fifth* invocation opcode, `invokedynamic`, and it only makes sense as a contrast to the four you learn here.
 
 ---
 
@@ -65,9 +65,9 @@ flowchart TD
 
 ### What the invoke instructions point at
 
-Invocation instructions do not embed method names. Their operand is an index into the **constant pool** (Lesson 02), where the method is described symbolically: the class or interface, the name, and the descriptor. Class methods are stored as `Methodref` entries, interface methods as `InterfaceMethodref` entries — and `invokeinterface` will only accept the latter. At runtime, the first execution of the instruction *resolves* that symbolic reference into a real target (Lesson 08 covers resolution in detail).
+Invocation instructions do not embed method names. Their operand is an index into the **constant pool** ([Lesson 02](02-anatomy-of-a-class-file.md)), where the method is described symbolically: the class or interface, the name, and the descriptor. Class methods are stored as `Methodref` entries, interface methods as `InterfaceMethodref` entries — and `invokeinterface` will only accept the latter. (One exception to that split: since JDK 8, `invokespecial` may also name an `InterfaceMethodref`, which is how `I.super.m()` calls to a default method are encoded.) At runtime, the first execution of the instruction *resolves* that symbolic reference into a real target (Lesson 08 covers resolution in detail).
 
-On the operand stack (Lesson 03), all four instructions work the same way: the receiver (for everything except `invokestatic`) and then the arguments are pushed in order, and the instruction pops them all, runs the method, and pushes the return value if there is one.
+On the operand stack ([Lesson 03](03-the-operand-stack.md)), all four instructions work the same way: the receiver (for everything except `invokestatic`) and then the arguments are pushed in order, and the instruction pops them all, runs the method, and pushes the return value if there is one.
 
 ---
 
@@ -227,7 +227,7 @@ class LoudGreeter extends FriendlyGreeter {
 
 Two `invokespecial` uses here, and they are the entire reason the opcode exists:
 
-- **Offset 1 of the constructor:** every constructor must call a superclass constructor first, and that target must be exact — you do not want dynamic dispatch deciding which `<init>` runs while the object is still half-built.
+- **Offset 1 of the constructor:** every constructor (except `Object`'s own, which has no superclass) must call a superclass constructor first, and that target must be exact — you do not want dynamic dispatch deciding which `<init>` runs while the object is still half-built.
 - **Offset 2 of `greet`:** `super.greet(name)` means "the parent's implementation, specifically", bypassing the override. If this compiled to `invokevirtual`, the vtable lookup would find `LoudGreeter.greet` again — the very method that is running — and the call would recurse forever. `invokespecial` is what makes `super.` semantics possible.
 
 ### 5. What the instructions point at in the constant pool
