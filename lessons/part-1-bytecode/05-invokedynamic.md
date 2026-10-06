@@ -78,7 +78,7 @@ Since JDK 9, `javac` compiles `"a" + x + "b"` into an `invokedynamic` whose boot
 
 ## Hands-on
 
-Part 1 lessons use explicitly declared classes compiled with `javac`, so the class declaration we're dissecting is visible in the source. `javap -v` was introduced in [Lesson 02](02-anatomy-of-a-class-file.md); the new flag here is `-p`, which shows `private` members — you need it because `javac` compiles the lambda body into a `private` synthetic method that the default output hides.
+Part 1 lessons use explicitly declared classes compiled with `javac`, so the class declaration we're dissecting is visible in the source. `javap -v` was introduced in [Lesson 02](02-anatomy-of-a-class-file.md); you'll also need `-p` from the same lesson here, because `javac` compiles the lambda body into a `private` synthetic method that the default output hides.
 
 ### 1. A lambda's call site
 

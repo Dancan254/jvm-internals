@@ -13,7 +13,7 @@
 
 This course is *run, don't read*. We disassemble class files, watch the JIT compile hot methods, fill the heap on purpose and interrogate a live JVM while it struggles. All of that happens with tools that ship inside the JDK you already have. No Maven, no IDE, no third-party installs — but only if the toolchain actually works on your machine. This lesson proves it does, and puts names on the instruments you'll see in all 33 lessons.
 
-It is the sequel to [Java Concurrency & Multithreading](https://github.com/Dancan254/concurreny-multithreading). You are assumed to be comfortable with everything in it — including running single-file Java 25 samples, which [its setup lesson](https://github.com/Dancan254/concurreny-multithreading) covers in detail. We recap the one command here and then move on to the new tools.
+It is the sequel to [Java Concurrency & Multithreading](https://github.com/Dancan254/concurreny-multithreading). You are assumed to be comfortable with everything in it — including running single-file Java 25 samples, which [its setup lesson](https://github.com/Dancan254/concurreny-multithreading/blob/master/lessons/part-0-setup/00-running-the-samples.md) covers in detail. We recap the one command here and then move on to the new tools.
 
 ---
 
@@ -79,7 +79,7 @@ OpenJDK 64-Bit Server VM Zulu25.28+85-CA (build 25+36-LTS, mixed mode, sharing)
 | `openjdk version "25"` | The Java spec version. You need **25**. |
 | `OpenJDK Runtime Environment Zulu25.28+85-CA` | Which OpenJDK **distribution** this is (Zulu here; yours may say Temurin, Oracle, Corretto). |
 | `OpenJDK 64-Bit Server VM ...` | The VM implementation — this is **HotSpot** in server mode. This line is the course's one assumption, confirmed. |
-| `mixed mode, sharing` | Interpreted + JIT-compiled execution (`mixed mode`), with a Class Data Sharing archive loaded (`sharing`). Part 4 explains the first; Lesson 28 touches the second. |
+| `mixed mode, sharing` | Interpreted + JIT-compiled execution (`mixed mode`), with a Class Data Sharing archive loaded (`sharing`). Part 4 explains the first; Lesson 07 looks inside the second. |
 
 **Now run it on your machine and write your three lines down.** Your distribution and build numbers will differ; that's fine and expected. What must match is `25` and `OpenJDK 64-Bit Server VM`. If `java -version` shows 24 or lower, install any OpenJDK 25 build — [SDKMAN!](https://sdkman.io) (`sdk install java 25-zulu`) is the easy route on Linux and macOS.
 
