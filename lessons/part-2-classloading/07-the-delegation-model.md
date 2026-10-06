@@ -40,7 +40,7 @@ A classloader's job is to turn a class name into bytes and bytes into a `Class` 
 | **Platform** | Much of the rest of the JDK's modules: `java.sql`, `java.net.http`, `jdk.httpserver`, `jdk.zipfs`, ... — the platform, but not *your* code | Yes — `ClassLoader.getPlatformClassLoader()` |
 | **Application** (a.k.a. *system*) | Your classpath: your classes and your dependencies | Yes — `ClassLoader.getSystemClassLoader()` |
 
-The split is not as tidy as "core vs the rest": bootstrap keeps some non-core modules too (`java.xml`, for one), and the application loader picks up a few JDK tool modules like `jdk.jcmd`. (Verified on JDK 25 by printing `.getClassLoader()` for a class from each module above — the five platform examples all report `PlatformClassLoader`.) [Lesson 11](11-modules-and-classloading.md) maps the full picture of which module lands on which loader.
+The split is not as tidy as "core vs the rest": bootstrap keeps some non-core modules too (`java.xml`, for one), and the application loader picks up a few JDK tool modules like `jdk.jcmd`. (Verified on JDK 25 by printing `.getClassLoader()` for a class from each module above — the four platform examples all report `PlatformClassLoader`.) [Lesson 11](11-modules-and-classloading.md) maps the full picture of which module lands on which loader.
 
 Two things in that table surprise people the first time:
 
