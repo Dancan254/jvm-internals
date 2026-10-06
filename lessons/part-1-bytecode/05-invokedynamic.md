@@ -344,4 +344,4 @@ It is a format string for the concatenation `"a" + x + "b"`: the literal charact
 - Compared with [Lesson 04](04-invocation-opcodes.md)'s four opcodes, the difference is *who decides the target and when*: `javac` once forever, versus a bootstrap method at first execution.
 - `invokedynamic` is general machinery, not a lambda feature: records, pattern switches and dynamic-language runtimes link through it too.
 
-**Previous: [Lesson 04, The invocation opcodes](04-invocation-opcodes.md)** · **Next: [Lesson 06, Generating bytecode with ASM](06-generating-bytecode-with-asm.md)**
+**Previous:** [Lesson 04 — The invocation opcodes](04-invocation-opcodes.md) · **Next:** [Lesson 06 — Generating bytecode with ASM](06-generating-bytecode-with-asm.md)

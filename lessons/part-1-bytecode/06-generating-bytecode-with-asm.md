@@ -391,4 +391,4 @@ ASM is a third-party dependency, and the course rule is that third-party code li
 
 This closes Part 1. You can now read a class file top to bottom, trace its instructions on the operand stack, explain how every call is linked — and build one yourself.
 
-**Next: Part 2, Classloading & linking — [course index](../README.md)**
+**Previous:** [Lesson 05 — `invokedynamic`](05-invokedynamic.md) · **Next:** [Lesson 07 — The delegation model](../part-2-classloading/07-the-delegation-model.md)
