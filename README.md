@@ -7,7 +7,7 @@
 **33 lessons · a quiz in every lesson · one final exam**
 
 [![Java](https://img.shields.io/badge/Java-25_LTS-f0196a?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
-[![Lessons](https://img.shields.io/badge/lessons-7_of_33-f0196a?style=for-the-badge&logo=bookstack&logoColor=white)](lessons/README.md)
+[![Lessons](https://img.shields.io/badge/lessons-12_of_33-f0196a?style=for-the-badge&logo=bookstack&logoColor=white)](lessons/README.md)
 [![Sequel](https://img.shields.io/badge/sequel_to-concurreny--multithreading-12121f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Dancan254/concurreny-multithreading)
 
 [**Start the course →**](lessons/README.md) &nbsp;·&nbsp; [Course index](lessons/README.md) &nbsp;·&nbsp; [The concurrency course ←](https://github.com/Dancan254/concurreny-multithreading)
@@ -96,16 +96,16 @@ flowchart LR
 
 </details>
 
-<details>
-<summary><b>Part 2 · Classloading & linking</b> — coming soon</summary>
+<details open>
+<summary><b>Part 2 · Classloading & linking</b></summary>
 
 | # | Lesson | You'll learn |
 |:-:|---|---|
-| 07 | The delegation model — *coming soon* | Bootstrap / platform / application classloaders post-JDK 9; `-verbose:class` |
-| 08 | Loading, linking, initialization — *coming soon* | Verification, preparation, resolution; `<clinit>`; the exact initialization triggers |
-| 09 | Custom classloaders — *coming soon* | Loading a class from raw bytes; namespaces; the "same class" `ClassCastException` |
-| 10 | Classloader leaks — *coming soon* | A reload-in-a-loop demo that fills Metaspace |
-| 11 | Modules & classloading — *coming soon* | What JPMS changed (and didn't) about visibility and delegation |
+| 07 | [The delegation model](lessons/part-2-classloading/07-the-delegation-model.md) | Bootstrap / platform / application classloaders post-JDK 9; `-verbose:class` |
+| 08 | [Loading, linking, initialization](lessons/part-2-classloading/08-loading-linking-initialization.md) | Verification, preparation, resolution; `<clinit>`; the exact initialization triggers |
+| 09 | [Custom classloaders](lessons/part-2-classloading/09-custom-classloaders.md) | Loading a class from raw bytes; namespaces; the "same class" `ClassCastException` |
+| 10 | [Classloader leaks](lessons/part-2-classloading/10-classloader-leaks.md) | A reload-in-a-loop demo that fills Metaspace |
+| 11 | [Modules & classloading](lessons/part-2-classloading/11-modules-and-classloading.md) | What JPMS changed (and didn't) about visibility and delegation |
 
 </details>
 

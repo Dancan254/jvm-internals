@@ -87,13 +87,13 @@ flowchart LR
 
 ## Part 2: Classloading & linking
 
-| # | Lesson | Status |
-|---|---|:-:|
-| 07 | The delegation model: bootstrap / platform / application classloaders | *coming soon* |
-| 08 | Loading, linking, initialization: verification, resolution, `<clinit>` | *coming soon* |
-| 09 | Custom classloaders: namespaces and the "same class" `ClassCastException` | *coming soon* |
-| 10 | Classloader leaks: filling Metaspace on purpose | *coming soon* |
-| 11 | Modules & classloading: what JPMS changed | *coming soon* |
+| # | Lesson |
+|---|---|
+| 07 | [The delegation model](part-2-classloading/07-the-delegation-model.md): bootstrap / platform / application classloaders |
+| 08 | [Loading, linking, initialization](part-2-classloading/08-loading-linking-initialization.md): verification, resolution, `<clinit>` |
+| 09 | [Custom classloaders](part-2-classloading/09-custom-classloaders.md): namespaces and the "same class" `ClassCastException` |
+| 10 | [Classloader leaks](part-2-classloading/10-classloader-leaks.md): filling Metaspace on purpose |
+| 11 | [Modules & classloading](part-2-classloading/11-modules-and-classloading.md): what JPMS changed |
 
 ## Part 3: Memory
 

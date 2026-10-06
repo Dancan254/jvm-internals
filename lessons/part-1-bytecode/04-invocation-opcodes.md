@@ -345,4 +345,4 @@ names.add("ada");
 - Invoke instructions carry a constant-pool index: `Methodref` for class methods, `InterfaceMethodref` for interface methods.
 - Since JDK 11, private instance methods are `invokevirtual`, not `invokespecial`.
 
-**Next: [Lesson 05, `invokedynamic`](05-invokedynamic.md)**
+**Previous:** [Lesson 03 — The operand stack](03-the-operand-stack.md) · **Next:** [Lesson 05 — `invokedynamic`](05-invokedynamic.md)

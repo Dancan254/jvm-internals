@@ -305,4 +305,4 @@ No. Offsets are byte positions, not instruction counters. The instruction at off
 - Byte offsets on the left of `javap -c` output are positions in the bytecode array — the `LineNumberTable` is what connects them to source lines.
 - You can now trace any straight-line bytecode by hand: that is the skill lessons 04–06 build on.
 
-**Next: [Lesson 04, the invocation opcodes](04-invocation-opcodes.md)**
+**Previous:** [Lesson 02 — Anatomy of a `.class` file](02-anatomy-of-a-class-file.md) · **Next:** [Lesson 04 — The invocation opcodes](04-invocation-opcodes.md)

@@ -279,20 +279,21 @@ Holding the JVM open for 30 seconds. PID-hunt me with jcmd.
 *(PIDs vary; `jcmd` lists itself, as lesson 00 warned.)* Now dump an archive out of the live process — `static_dump` means "all currently loaded, shareable classes":
 
 ```bash
-jcmd 93398 VM.cds static_dump
+jcmd 111168 VM.cds static_dump
 ```
 
 ```
-93398:
-Static dump: /home/champez/jvm-internals-samples/lesson07/java_pid93398_static.jsa
+111168:
+Static dump: The process was attached by jcmd and dumped a static archive /home/champez/jvm-internals-samples/lesson07/java_pid111168_static.jsa
+/home/champez/jvm-internals-samples/lesson07/java_pid111168_static.jsa
 ```
 
 ```bash
-ls -lh java_pid93398_static.jsa
+ls -lh java_pid111168_static.jsa
 ```
 
 ```
--rw-rw-r-- 1 champez champez 9.0M Oct  6 18:50 java_pid93398_static.jsa
+-rw-rw-r-- 1 champez champez 9.0M Oct  6 19:21 java_pid111168_static.jsa
 ```
 
 *(PID, path, timestamp and size vary.)* A 9 MB archive, written by a running JVM about itself. The default `classes.jsa` is exactly this kind of file, produced at JDK build time with the full core-class set — which is why it is bigger.

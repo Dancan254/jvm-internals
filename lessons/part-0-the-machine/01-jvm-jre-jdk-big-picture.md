@@ -318,4 +318,4 @@ Metaspace is one of the **runtime data areas** — the one holding class metadat
 - The JVM will show you itself: `-XshowSettings:properties` for its configuration surface, `-verbose:class` for the classloader subsystem in action.
 - A one-line program loads ~2,500 classes, mostly from the CDS archive. The machine is big; now you have its map.
 
-**Next: [Lesson 02, Anatomy of a `.class` file](../part-1-bytecode/02-anatomy-of-a-class-file.md)**
+**Previous:** [Lesson 00 — Setup & toolchain](00-setup-and-toolchain.md) · **Next:** [Lesson 02 — Anatomy of a `.class` file](../part-1-bytecode/02-anatomy-of-a-class-file.md)

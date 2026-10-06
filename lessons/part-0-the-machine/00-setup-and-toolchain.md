@@ -392,4 +392,4 @@ Because the *strategy* is chosen at runtime, once, by a bootstrap method — and
 - Flags are **explained at first use, referenced afterwards** — `-Xlog:gc` was this lesson's.
 - `jcmd -l` includes `jcmd` itself; single-file runs appear as `SourceLauncher`.
 
-**Next: [Lesson 01, JVM, JRE, JDK & the big picture](01-jvm-jre-jdk-big-picture.md)**
+**Next:** [Lesson 01 — JVM, JRE, JDK & the big picture](01-jvm-jre-jdk-big-picture.md)
