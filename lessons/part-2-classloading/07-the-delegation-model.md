@@ -37,8 +37,10 @@ A classloader's job is to turn a class name into bytes and bytes into a `Class` 
 | Loader | Loads | Java object? |
 |---|---|---|
 | **Bootstrap** | The core of the platform — `java.base`'s heart: `java.lang.*`, `java.util.*`, the classes the JVM itself can't start without | **No.** It is C++ code inside HotSpot; Java sees it as `null` |
-| **Platform** | The rest of the JDK's modules: `java.sql`, `java.xml`, `jdk.jcmd`, ... — the platform, but not *your* code | Yes — `ClassLoader.getPlatformClassLoader()` |
+| **Platform** | Much of the rest of the JDK's modules: `java.sql`, `java.net.http`, `jdk.httpserver`, `jdk.zipfs`, ... — the platform, but not *your* code | Yes — `ClassLoader.getPlatformClassLoader()` |
 | **Application** (a.k.a. *system*) | Your classpath: your classes and your dependencies | Yes — `ClassLoader.getSystemClassLoader()` |
+
+The split is not as tidy as "core vs the rest": bootstrap keeps some non-core modules too (`java.xml`, for one), and the application loader picks up a few JDK tool modules like `jdk.jcmd`. (Verified on JDK 25 by printing `.getClassLoader()` for a class from each module above — the five platform examples all report `PlatformClassLoader`.) [Lesson 11](11-modules-and-classloading.md) maps the full picture of which module lands on which loader.
 
 Two things in that table surprise people the first time:
 
@@ -92,7 +94,7 @@ Because of delegation, the loader that is *asked* for a class is often not the l
 
 That distinction leads to the single most important sentence in Part 2:
 
-> **A class's identity inside the JVM is the pair `(fully-qualified name, defining loader)` — not the name alone.**
+> **A class's identity inside the JVM is the pair `(binary name, defining loader)` — not the name alone.** (*Binary name* is the JVMS term for what you've been calling the fully-qualified name.)
 
 Each defining loader owns a **namespace**: the set of `(name)` mappings it has defined. Two loaders can load the same `.class` file and produce two *different* types that happen to share a name. Cast one to the other and you get the surreal `ClassCastException: Foo cannot be cast to Foo` from the top of this lesson. Lesson 09 produces that exception on purpose; Lesson 10 shows why those extra copies are how Metaspace leaks happen. For now, pin the vocabulary — everything else in Part 2 is a consequence of it.
 
@@ -272,28 +274,27 @@ jcmd -l
 
 ```
 Holding the JVM open for 30 seconds. PID-hunt me with jcmd.
-93398 HoldOpen
-93366 jdk.jcmd/sun.tools.jcmd.JCmd -l
+117819 HoldOpen
+117843 jdk.jcmd/sun.tools.jcmd.JCmd -l
 ```
 
 *(PIDs vary; `jcmd` lists itself, as lesson 00 warned.)* Now dump an archive out of the live process — `static_dump` means "all currently loaded, shareable classes":
 
 ```bash
-jcmd 111168 VM.cds static_dump
+jcmd 117819 VM.cds static_dump
 ```
 
 ```
-111168:
-Static dump: The process was attached by jcmd and dumped a static archive /home/champez/jvm-internals-samples/lesson07/java_pid111168_static.jsa
-/home/champez/jvm-internals-samples/lesson07/java_pid111168_static.jsa
+117819:
+Static dump: /home/champez/jvm-internals-samples/lesson07/java_pid117819_static.jsa
 ```
 
 ```bash
-ls -lh java_pid111168_static.jsa
+ls -lh java_pid117819_static.jsa
 ```
 
 ```
--rw-rw-r-- 1 champez champez 9.0M Oct  6 19:21 java_pid111168_static.jsa
+-rw-rw-r-- 1 champez champez 9.0M Oct  6 19:52 java_pid117819_static.jsa
 ```
 
 *(PID, path, timestamp and size vary.)* A 9 MB archive, written by a running JVM about itself. The default `classes.jsa` is exactly this kind of file, produced at JDK build time with the full core-class set — which is why it is bigger.
