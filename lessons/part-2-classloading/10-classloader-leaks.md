@@ -393,7 +393,7 @@ time java -XX:MaxMetaspaceSize=64m -Xlog:class+unload FixedLoop 2>&1 | tail -1
 <details>
 <summary>Reveal answer</summary>
 
-The static field `LeakLoop.PINNED` (a GC root, since `LeakLoop` is loaded by the application classloader) holds the copy's one instance. The instance references its `Class` object; the `Class` references its defining `ByteLoader`; the loader references every class it defined. Since every node in the chain is strongly reachable, neither the instance, the `Class`, the loader nor the Metaspace metadata is collectible — and unloading is all-or-nothing per loader, so the whole generation stays.
+The static field `LeakLoop.PINNED` (a GC root reachable for the JVM's lifetime) holds the copy's one instance. The instance references its `Class` object; the `Class` references its defining `ByteLoader`; the loader references every class it defined. Since every node in the chain is strongly reachable, neither the instance, the `Class`, the loader nor the Metaspace metadata is collectible — and unloading is all-or-nothing per loader, so the whole generation stays.
 
 </details>
 

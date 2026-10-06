@@ -251,7 +251,7 @@ java -Xlog:cds WhoLoadsWhat 2>&1 | grep "\[cds\]" | head -12
 [0.015s][info][cds] Mapped static  region #2 at base 0x000070fe1f77c000 top 0x000070fe1f7af000 (Bitmap)
 ```
 
-*(Addresses vary; the sequence does not.)* Read it as a story: open the `.jsa`, sanity-check that it was built with a compatible object layout (`UseCompressedOops` and friends — Lesson 14 explains those), reserve address space, and map three regions — a read-write region, a read-only region, and a bitmap. All by 0.015s. *That* is what `source: shared objects file` means physically.
+*(Addresses vary; the sequence does not. Note the path: `ls` above showed the archive through the `current` symlink, but HotSpot canonicalizes it to the real `25-zulu` directory before mapping.)* Read it as a story: open the `.jsa`, sanity-check that it was built with a compatible object layout (`UseCompressedOops` and friends — Lesson 14 explains those), reserve address space, and map three regions — a read-write region, a read-only region, and a bitmap. All by 0.015s. *That* is what `source: shared objects file` means physically.
 
 For the live-process view, `jcmd` from [Lesson 00](../part-0-the-machine/00-setup-and-toolchain.md) has a `VM.cds` command — you saw it listed in `jcmd <pid> help` there. One correction to expectations: `VM.cds` is a **dump** command, not a status command — it writes an archive of the shareable classes a running JVM has loaded. Start something that stays alive:
 
@@ -348,7 +348,7 @@ real	0m3.867s
 real	0m9.503s
 ```
 
-Same bytecode, same output, roughly **2.5× slower** without the archive — for a program that does almost nothing. Scale that ratio to a Spring Boot app loading tens of thousands of classes and you see why `sharing` is the default, and why the CDS/AppCDS family keeps getting investment (AOT caches in newer JDKs are its direct descendants).
+*(user/sys omitted.)* Same bytecode, same output, roughly **2.5× slower** without the archive — for a program that does almost nothing. Scale that ratio to a Spring Boot app loading tens of thousands of classes and you see why `sharing` is the default, and why the CDS/AppCDS family keeps getting investment (AOT caches in newer JDKs are its direct descendants).
 
 ---
 
@@ -358,7 +358,7 @@ Same bytecode, same output, roughly **2.5× slower** without the archive — for
 2. Run `java -Xshare:off -Xlog:cds WhoLoadsWhat`. How many `[cds]` lines appear, and what does that tell you about when the archive is even *touched*?
 3. With sharing on, run `java -verbose:class WhoLoadsWhat 2>&1 | grep "jrt:/"`. Which JDK classes load the slow way even though they live in `java.base`? Hypothesize why they were left out of the archive — then consider what that implies: the archive is a *chosen subset*, not "all of the JDK".
 4. Run `jcmd <pid> VM.cds static_dump my-backup.jsa` against `HoldOpen` with an explicit filename, then `ls -lh` it next to the JDK's `classes.jsa`. Yours is smaller — which classes does the build-time archive have that your running JVM never loaded?
-5. Recreate the lesson 01 comparison from this lesson's machinery: run the count command from step 2 of the hands-on against the *source launcher* (`java -verbose:class WhoLoadsWhat.java`) instead of the compiled class. Where did the extra ~1,900 classes come from?
+5. Recreate the lesson 01 comparison from this lesson's machinery: run the count command from step 2 of the hands-on against the *source launcher* (`java -verbose:class WhoLoadsWhat.java`) instead of the compiled class. Where did the extra ~1,900 classes (varies) come from?
 
 ---
 

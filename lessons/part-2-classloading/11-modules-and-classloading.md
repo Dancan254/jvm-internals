@@ -50,7 +50,7 @@ The JVM builds a **module graph** from these declarations before your code runs:
 
 The bigger change was inward. The JDK's own class library was carved into ~70 modules — `java.base` (the only mandatory one), `java.sql`, `java.xml`, `jdk.compiler`, and so on. `java.base` exports `java.lang`, `java.util`, `java.io`... but **not** `jdk.internal.*` or most `sun.*` packages. Decades of "don't touch these, they're internal, but nothing stops you" became "the JVM stops you."
 
-That is why old libraries broke. A serialization framework reflecting into `java.lang` private fields, a tool importing `sun.misc.BASE64Encoder` — all of it ran on the honour system until JDK 9, and then the honour system acquired a police force. The `IllegalAccessError` / `InaccessibleObjectException` wave of the migration era was this enforcement arriving. There are deliberate escape hatches — `--add-exports <module>/<package>=<target>` grants export access and `--add-opens` grants reflective access from the command line — for code that genuinely needs internals while it migrates.
+That is why old libraries broke. A serialization framework reflecting into `java.lang` private fields, a tool importing `sun.misc.BASE64Encoder` — all of it ran on the honor system until JDK 9, and then the honor system acquired a police force. The `IllegalAccessError` / `InaccessibleObjectException` wave of the migration era was this enforcement arriving. There are deliberate escape hatches — `--add-exports <module>/<package>=<target>` grants export access and `--add-opens` grants reflective access from the command line — for code that genuinely needs internals while it migrates.
 
 ### What modules did NOT change
 
@@ -64,7 +64,7 @@ Here is the part most module tutorials skip, and the part this course cares abou
 | Is class identity still `(name, defining loader)`? | Yes. The namespace rules from [Lesson 09](09-custom-classloaders.md) are unchanged. |
 | Do JDK classes still come from the CDS archive? | Yes. `java.base` classes still load from the shared archive [Lesson 07](07-the-delegation-model.md) dissected. |
 
-JPMS adds a *mapping*: each module is assigned to a classloader (the JDK's built-in modules are spread across the three built-in loaders; your module-path modules go to the app loader). A class's runtime package is now effectively `(package name, module, defining loader)` — but since one loader loads each module, the observable identity rules stay the same. The module graph is consulted **during resolution**, as an extra access check layered on top of the verifier and the loader's namespace. Modules decide *whether you may link*; classloaders still do the *finding and loading*.
+JPMS adds a *mapping*: each module is assigned to a classloader (the JDK's built-in modules are spread across the three built-in loaders; your module-path modules go to the app loader). A class's runtime package stays exactly the JVMS pair `(package name, defining loader)` — the module is implied through the loader, since each module is loaded by exactly one loader, so the observable identity rules stay the same. The module graph is consulted **during resolution**, as an extra access check layered on top of the verifier and the loader's namespace. Modules decide *whether you may link*; classloaders still do the *finding and loading*.
 
 ```mermaid
 flowchart TD
@@ -368,7 +368,7 @@ Classpath code lives in the **unnamed module**, and `java.base` does not export 
 
 ## Try it yourself
 
-1. In step 1's working program, take `utils` off the module path and put it on the classpath instead: `java -cp out/utils --module-path out/app --module app/com.demo.app.Main`. It fails during boot-layer initialization — read the `FindException` and explain why the unnamed module can't satisfy `requires utils`. (This is the single most common real-world JPMS error.)
+1. In step 1's working program, take `utils` off the module path and put it on the classpath instead: `java -cp out/utils --module-path out/app --module app/com.demo.app.Main`. It fails during startup, before `main` runs — read the `FindException` and explain why the unnamed module can't satisfy `requires utils`. (This is the single most common real-world JPMS error.)
 2. Run step 4 without the `grep`: `java --show-module-resolution --module-path out --module app/com.demo.app.Main`. Find the lines where `java.base` binds its service modules, and spot the `jrt:/` URLs. What does it mean that the JDK's own modules resolve through the same machinery as yours?
 3. Repeat step 3's runtime-denial experiment, but this time recompile *both* modules after removing the export. Why does the failure move back to compile time? Which failure would you rather debug at 3 a.m., and why?
 4. Add a second method to `SecretSauce` and call it via reflection from `Main` (`Class.forName("com.demo.utils.internal.SecretSauce")`, then `getDeclaredMethod(...).invoke(null)`), with internals not exported. What exception do you get, and how does it differ from step 3's `IllegalAccessError`? Then make it pass with `--add-opens utils/com.demo.utils.internal=app`.

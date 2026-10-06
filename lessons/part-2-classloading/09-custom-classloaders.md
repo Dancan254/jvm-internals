@@ -11,7 +11,7 @@
 
 ## Why this matters
 
-Read this stack trace line, from a real deployment:
+Read this stack trace line — a typical one from a real deployment looks like:
 
 ```
 java.lang.ClassCastException: class com.acme.Plugin cannot be cast to class com.acme.Plugin
@@ -342,7 +342,7 @@ Note the `java.*` guard: child-first must never apply to the JDK's own packages 
   java.lang.LinkageError: loader ByteLoader @6b95977 attempted duplicate class definition for Greeter. (Greeter is in unnamed module of loader ByteLoader @6b95977, parent loader 'app')
   ```
 
-  There is no "redefine" escape hatch: to reload, discard the whole loader and define fresh in a new instance.
+  *(The identity hash varies from run to run.)* There is no "redefine" escape hatch: to reload, discard the whole loader and define fresh in a new instance.
 - **Storing the plugin object in a field typed by the app's class.** `Greeter g = (Greeter) pluginObject` compiles fine and throws the cross-namespace `ClassCastException` at runtime. Cast to a shared interface from a common ancestor namespace instead.
 - **Losing track of the discarded loader.** Hot-reload works by abandoning loader instances, but a loader is collectable only when its classes, their `Class` objects, *and every instance* are unreachable. Keep one plugin object in a static field and the entire namespace — loader, classes, Metaspace metadata — stays pinned. [Lesson 10](10-classloader-leaks.md) makes that leak impossible to ignore.
 
