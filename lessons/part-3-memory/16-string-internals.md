@@ -108,7 +108,7 @@ Intern a million distinct strings and you have added a million entries plus grow
 
 ## Hands-on
 
-All samples compile with `javac` and run on the course JDK. Work in `~/jvm-internals-samples/lesson-16/`.
+All samples compile with `javac` and run on the course JDK. Work in `~/jvm-internals-samples/lesson16/`.
 
 ### 1. The fields and the coder
 
@@ -167,6 +167,10 @@ Instance fields of java.lang.String:
   boolean  hashIsZero
 Exception in thread "main" java.lang.reflect.InaccessibleObjectException: Unable to make field private final byte[] java.lang.String.value accessible: module java.base does not "opens java.lang" to unnamed module @7ad041f3
 	at java.base/java.lang.reflect.AccessibleObject.throwInaccessibleObjectException(AccessibleObject.java:353)
+	at java.base/java.lang.reflect.AccessibleObject.checkCanSetAccessible(AccessibleObject.java:329)
+	at java.base/java.lang.reflect.AccessibleObject.checkCanSetAccessible(AccessibleObject.java:277)
+	at java.base/java.lang.reflect.Field.checkCanSetAccessible(Field.java:179)
+	at java.base/java.lang.reflect.Field.setAccessible(Field.java:173)
 	at StringAnatomy.main(StringAnatomy.java:15)
 ```
 
@@ -381,7 +385,7 @@ Std. dev. of bucket size:     5.202
 Maximum bucket size     :        24
 ```
 
-*(The SymbolTable and shared-table sections between the program output and this block are omitted; entry counts include the JVM's own literals and vary slightly between runs.)* Read it line by line: 131,072 buckets (1 MB of bucket array, 8 bytes each); 1,000,182 entries at 16 bytes each — your million plus ~182 literals the JDK itself interned; the literals (the actual `String` objects) averaging 64 bytes each — matching the anatomy math for a 20-character string. **Total footprint: about 81 MB for a million short strings.** Average chain length 7.6 after the growth, worst bucket 24.
+*(The SymbolTable and shared-table sections between the program output and this block are omitted; entry counts include the JVM's own literals and vary slightly between runs. Rarely, this JDK prints the table zeroed at exit — an exit-time statistics quirk, not an empty pool; re-run and the real numbers appear.)* Read it line by line: 131,072 buckets (1 MB of bucket array, 8 bytes each); 1,000,182 entries at 16 bytes each — your million plus ~182 literals the JDK itself interned; the literals (the actual `String` objects) averaging 64 bytes each — matching the anatomy math for a 20-character string. **Total footprint: about 81 MB for a million short strings.** Average chain length 7.6 after the growth, worst bucket 24.
 
 Now the sizing knob. `-XX:StringTableSize=<n>` — first use — sets the table's **initial** bucket count (default 65,536, confirmable with `-XX:+PrintFlagsFinal -version | grep StringTableSize`). The table still grows under load, so this is about starting big enough to avoid repeated growth work and long early chains. What does *starting too small* cost? Pin it at 1,024 and compare:
 
@@ -407,7 +411,7 @@ sample: interned-payload-999999
 real	0m11.091s
 ```
 
-*(Timings vary; the ratio is the signal.)* Three times slower — growth churn plus long collision chains on every single intern. Re-run the small-table variant with the statistics flags to see the chains directly:
+*(Timings vary; the ratio is the signal.)* Several times slower — growth churn plus long collision chains on every single intern. Re-run the small-table variant with the statistics flags to see the chains directly:
 
 ```bash
 java -Xmx256m -XX:StringTableSize=1024 -XX:+UnlockDiagnosticVMOptions -XX:+PrintStringTableStatistics InternCost 2>&1 | sed -n '/^StringTable statistics:/,/Maximum/p'
@@ -532,6 +536,8 @@ javap -c ConcatCost | grep -A9 "iload         4"
         24: astore_3
         25: iinc          4, 1
         28: goto          10
+        31: invokestatic  #7                  // Method java/lang/System.nanoTime:()J
+        34: lstore        4
 ```
 
 The recipe takes the whole current `s` as its dynamic input and produces a brand-new, longer `s`. Fast machinery — one strategy-optimized call — but the output of iteration *k* is *k+1* chunks long, and the old string is garbage the moment the new one exists. Now run it under a small heap with GC logging (`-Xmx` from lesson 12, `-Xlog:gc` from lesson 00):

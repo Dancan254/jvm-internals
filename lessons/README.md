@@ -97,14 +97,14 @@ flowchart LR
 
 ## Part 3: Memory
 
-| # | Lesson | Status |
-|---|---|:-:|
-| 12 | Runtime data areas: heap, stack, Metaspace, and every `OutOfMemoryError` flavor | *coming soon* |
-| 13 | Object layout (JOL): mark word, klass word, padding, alignment | *coming soon* |
-| 14 | Compressed oops: OOP encoding and the 32 GB boundary | *coming soon* |
-| 15 | Escape analysis & scalar replacement: allocations that never reach the heap | *coming soon* |
-| 16 | String internals: compact strings, the string pool, `intern()` | *coming soon* |
-| 17 | Off-heap memory: direct buffers and `-XX:NativeMemoryTracking` | *coming soon* |
+| # | Lesson |
+|---|---|
+| 12 | [Runtime data areas](part-3-memory/12-runtime-data-areas.md): heap, stack, Metaspace, and every `OutOfMemoryError` flavor |
+| 13 | [Object layout (JOL)](part-3-memory/13-object-layout-jol.md): mark word, klass word, padding, alignment |
+| 14 | [Compressed oops](part-3-memory/14-compressed-oops.md): OOP encoding and the 32 GB boundary |
+| 15 | [Escape analysis & scalar replacement](part-3-memory/15-escape-analysis.md): allocations that never reach the heap |
+| 16 | [String internals](part-3-memory/16-string-internals.md): compact strings, the string pool, `intern()` |
+| 17 | [Off-heap memory](part-3-memory/17-off-heap-memory.md): direct buffers and `-XX:NativeMemoryTracking` |
 
 ## Part 4: Execution engine
 

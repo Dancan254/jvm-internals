@@ -378,7 +378,7 @@ time java -XX:MaxMetaspaceSize=64m -Xlog:class+unload FixedLoop 2>&1 | tail -1
 
 ## Common mistakes
 
-- **"`OutOfMemoryError` means the heap is full — raise `-Xmx`."** Read the flavor. `Metaspace` is class metadata in native memory, outside the heap entirely; the leak demo died with `15M` used of a `56M` heap. Raising `-Xmx` does nothing for it, and [Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md)'s map is how you route each OOM flavor to its area. Lesson 12 gives every flavor its own deep dive.
+- **"`OutOfMemoryError` means the heap is full — raise `-Xmx`."** Read the flavor. `Metaspace` is class metadata in native memory, outside the heap entirely; the leak demo died with `15M` used of a `56M` heap. Raising `-Xmx` does nothing for it, and [Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md)'s map is how you route each OOM flavor to its area. [Lesson 12](../part-3-memory/12-runtime-data-areas.md) gives every flavor its own deep dive.
 - **"Same bytes means same class — the JVM will deduplicate."** It cannot. Class identity is (name, defining loader) from [Lesson 09](09-custom-classloaders.md); two copies loaded by different loaders are different classes with separate metadata, which is exactly what the 20,000 histogram rows showed. Deduplicating them would destroy namespace isolation.
 - **"Unreferenced classes are unloaded immediately."** Unloading is GC work. It happens at collections, in batches (look at the shared timestamps in section 4), and only once the *loader* is unreachable. Between collections, dead classes sit in Metaspace — normal, and not a leak.
 - **"Capping Metaspace fixes the leak."** `-XX:MaxMetaspaceSize` changes how you die, not whether: it converts a multi-day native-memory bleed that destabilises the host into a fast, explicit `OutOfMemoryError` with a Java stack trace. That conversion is genuinely useful — cap it in production — but the fix is always removing the pin.
@@ -441,6 +441,6 @@ The cap limits *live* class metadata at any instant, not the total number of cla
 - Reloading the *same bytes* through a *new loader* always allocates fresh metadata — namespaces ([Lesson 09](09-custom-classloaders.md)) make the copies distinct classes, and distinctness is the point.
 - The leak is one surviving reference crossing from a long-lived namespace into a reloadable one: redeployed webapps, `ThreadLocal`s in immortal pool threads, registry entries. Remove the pin and the identical code runs forever under the same cap.
 - Diagnose from the outside: `-Xlog:class+load,class+unload` (loads climbing, unloads flat) and `jcmd GC.class_histogram` (one name, thousands of rows). `-XX:MaxMetaspaceSize` bounds the blast radius; it is not the fix.
-- Class unloading is GC work — batched, on the collector's schedule — which makes this lesson the bridge into Part 3's runtime data areas, starting with Metaspace itself in lesson 12.
+- Class unloading is GC work — batched, on the collector's schedule — which makes this lesson the bridge into Part 3's runtime data areas, starting with Metaspace itself in [lesson 12](../part-3-memory/12-runtime-data-areas.md).
 
 **Previous:** [Lesson 09 — Custom classloaders](09-custom-classloaders.md) · **Next:** [Lesson 11 — Modules & classloading](11-modules-and-classloading.md)
