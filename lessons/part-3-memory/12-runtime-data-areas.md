@@ -11,7 +11,7 @@
 
 ## Why this matters
 
-[Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) opened with a wall of production error messages and a promise: each one names a part of the machine. Two lessons later the course has already made good on two of them — `NoClassDefFoundError` was Part 2's classloader subsystem, and `OutOfMemoryError: Metaspace` was [Lesson 10](../part-2-classloading/10-classloader-leaks.md)'s classloader leak. This lesson finishes the map.
+[Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) opened with a wall of production error messages and a promise: each one names a part of the machine. Eleven lessons and two parts later the course has already made good on two of them — `NoClassDefFoundError` was Part 2's classloader subsystem, and `OutOfMemoryError: Metaspace` was [Lesson 10](../part-2-classloading/10-classloader-leaks.md)'s classloader leak. This lesson finishes the map.
 
 The practical skill is *routing*. When an on-call alert says a JVM died, the error text tells you which memory area ran out, and the area tells you which knob, which diagnostic, and which lesson of this course applies. `OutOfMemoryError: Java heap space` and `OutOfMemoryError: Metaspace` share nine words and have nothing else in common: one is objects in a GC-managed arena, the other is class metadata in native memory. Teams that can't tell them apart do the classic wrong thing — raise `-Xmx` and watch the JVM die again, slower. You've already seen the proof: Lesson 10's leak died with 15 MB used of a 56 MB heap.
 
@@ -96,13 +96,15 @@ Here is the deliverable the rest of Part 3 consumes. Each error flavor maps to e
 | `java.lang.OutOfMemoryError: Direct buffer memory` | Off-heap direct buffers — outside all five areas | Lesson 17 |
 | `java.lang.OutOfMemoryError: unable to create native thread` | Native method stacks / OS threads | None — see below |
 
+The direct-buffer row uses the traditional short name. On this JDK the real message is more verbose — `java.lang.OutOfMemoryError: Cannot reserve 8388608 bytes of direct buffer memory (allocated: 33554432, limit: 33554432)`, captured on this machine under `-XX:MaxDirectMemorySize=32m` — but it still names direct buffer memory plainly, and lesson 17 produces the full line on purpose.
+
 The last row is deliberate. Every failure demo in this course is *bounded*: pinned with a size flag so it dies in seconds, in the intended flavor, without stressing the machine. A thread-spam demo for `unable to create native thread` has no such pin — it fails by exhausting a host resource (memory for thread stacks, or a process limit), which can destabilize the machine it's demonstrating on. That story is told, not run.
 
 ---
 
 ## Hands-on
 
-Part 3 keeps the Part 2 convention: explicitly declared classes, compiled with `javac`, so nothing about the samples is magic. Three programs today — one diagnostic, two deliberate crashes.
+Part 3 keeps the Part 2 convention: explicitly declared classes, compiled with `javac`, so nothing about the samples is magic. Three programs today — one diagnostic, two deliberate crashes. All commands below were run from a fresh working directory (`mkdir -p ~/jvm-internals-samples/lesson12 && cd ~/jvm-internals-samples/lesson12`) — create the three files there and follow along.
 
 ### 1. `AreaHunt` — making the areas observable
 
@@ -335,7 +337,7 @@ public class HeapBoom {
 }
 ```
 
-Every chunk is strongly reachable from a GC root — the local variable `hog` on `main`'s stack — so no collector can help; this is a leak by construction. On this machine's default 9,960 MB heap it would hold several gigabytes before dying. We never run it that way. Pin the heap to 32 MB, first use of `-Xmx`, full explanation: it sets the **maximum heap size** — the cap on the one shared area — and the JVM throws `OutOfMemoryError: Java heap space` when it cannot satisfy an allocation below the cap even after collecting everything collectible. The default you just read off the flags (`MaxRAMPercentage=25`) is ergonomic and machine-relative; `-Xmx` is how you state the budget explicitly, and how this course keeps failure demos in the seconds-and-megabytes range. `time` proves the bound:
+Every chunk is strongly reachable from a GC root — the local variable `hog` on `main`'s stack — so no collector can help; this is a leak by construction. On this machine's default 9,960 MB heap it would hold several gigabytes before dying. We never run it that way. Pin the heap to 32 MB with `-Xmx` — mentioned in passing in [Lesson 10](../part-2-classloading/10-classloader-leaks.md), first full explanation here: it sets the **maximum heap size** — the cap on the one shared area — and the JVM throws `OutOfMemoryError: Java heap space` when it cannot satisfy an allocation below the cap even after collecting everything collectible. The default you just read off the flags (`MaxRAMPercentage=25`) is ergonomic and machine-relative; `-Xmx` is how you state the budget explicitly, and how this course keeps failure demos in the seconds-and-megabytes range. `time` proves the bound:
 
 ```bash
 time java -Xmx32m HeapBoom
@@ -350,6 +352,8 @@ real	0m0.564s
 user	0m0.217s
 sys	0m0.114s
 ```
+
+*(Timings and the last progress line vary per run — a verify run died in 0.211s; the JVM always dies somewhere between the 8 MB and 16 MB lines on this machine.)*
 
 Dead in just over half a second, in the exact intended flavor. Two honest observations. First, it died with the list holding somewhere between 8 and 16 MB — nowhere near 32. The cap is on the *whole heap*: the JVM needs room for its own objects, for the young generation to function, and for the `ArrayList`'s growth copy, and G1 refuses to let a heap sit 100% full. "Cannot allocate after a full collection" arrives well before "your data equals `-Xmx`." Second, look at the death site: `HeapBoom.java:10`, the `new byte[...]` line — an *allocation* failed, where Lesson 10's Metaspace death happened inside `defineClass`. The stack trace already tells you the area if you read it.
 
