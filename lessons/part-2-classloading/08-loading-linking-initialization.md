@@ -49,7 +49,7 @@ flowchart LR
 
 ### Linking: verification
 
-The verifier re-reads the class file structures you met in [Lesson 02](02-anatomy-of-a-class-file.md) and proves them safe to execute: the file is structurally well-formed, every instruction's operands have the right types, the operand stack ([Lesson 03](03-the-operand-stack.md)) never underflows or holds the wrong type, every branch lands on an instruction boundary, every method returns what its descriptor promises. This is the JVM's security and stability foundation: because verification proves type safety *once, at link time*, the interpreter and JIT can execute bytecode without re-checking every single instruction. A class that fails verification is rejected with `VerifyError` — *before a single byte of it runs*.
+The verifier re-reads the class file structures you met in [Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md) and proves them safe to execute: the file is structurally well-formed, every instruction's operands have the right types, the operand stack ([Lesson 03](../part-1-bytecode/03-the-operand-stack.md)) never underflows or holds the wrong type, every branch lands on an instruction boundary, every method returns what its descriptor promises. This is the JVM's security and stability foundation: because verification proves type safety *once, at link time*, the interpreter and JIT can execute bytecode without re-checking every single instruction. A class that fails verification is rejected with `VerifyError` — *before a single byte of it runs*.
 
 ### Linking: preparation
 
@@ -57,7 +57,7 @@ The JVM allocates storage for the class's `static` fields and sets each to its *
 
 ### Linking: resolution
 
-Bytecode never embeds targets directly; it embeds indexes into the constant pool ([Lesson 02](02-anatomy-of-a-class-file.md)) — symbolic names like `Method java/io/PrintStream.println`. Resolution turns those symbols into direct references: real classes, real fields, real methods. HotSpot resolves **lazily**, on first actual use of each entry, so resolving one method's references doesn't force every class it merely mentions to load. Resolution is where `invokedynamic`'s bootstrap method runs ([Lesson 05](05-invokedynamic.md) watched that happen), and it's where version-skew errors come from: `NoSuchMethodError`, `NoSuchFieldError` and `IncompatibleClassChangeError` mean a symbol that existed at compile time no longer resolves at runtime — a classic dependency-conflict symptom.
+Bytecode never embeds targets directly; it embeds indexes into the constant pool ([Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md)) — symbolic names like `Method java/io/PrintStream.println`. Resolution turns those symbols into direct references: real classes, real fields, real methods. HotSpot resolves **lazily**, on first actual use of each entry, so resolving one method's references doesn't force every class it merely mentions to load. Resolution is where `invokedynamic`'s bootstrap method runs ([Lesson 05](../part-1-bytecode/05-invokedynamic.md) watched that happen), and it's where version-skew errors come from: `NoSuchMethodError`, `NoSuchFieldError` and `IncompatibleClassChangeError` mean a symbol that existed at compile time no longer resolves at runtime — a classic dependency-conflict symptom.
 
 ### Initialization: the six active-use triggers
 
@@ -86,7 +86,7 @@ Trigger 4 has that "not a constant" carve-out because there is nothing to trigge
 
 ## Hands-on
 
-Part 2 dissects classloading, so — like Part 1 — we compile explicit classes with `javac` rather than using the source launcher. `javap -c` was introduced in [Lesson 02](02-anatomy-of-a-class-file.md) and `-p` in [Lesson 05](05-invokedynamic.md); the class-load logging comes from [Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) and [Lesson 07](07-the-delegation-model.md).
+Part 2 dissects classloading, so — like Part 1 — we compile explicit classes with `javac` rather than using the source launcher. `javap -c` was introduced in [Lesson 03](../part-1-bytecode/03-the-operand-stack.md) and `-p` in [Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md); the class-load logging comes from [Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) and [Lesson 07](07-the-delegation-model.md).
 
 ### 1. A constant access initializes nothing — and loads nothing
 
@@ -383,7 +383,7 @@ class A {
 }
 ```
 
-`javap` prints the constructor as `A();` and `<clinit>` as `static {};`, but look at what `static {};` *contains*: first the field initializer (`B.y + 1` computed and stored into `x`, offsets 0–5), then the static block (offsets 8–22), **in the textual order of the source**. One synthetic method, glued together from both. (And offset 14 is a cameo from [Lesson 05](05-invokedynamic.md): the `"x=" + x` concatenation inside the block is an indified `makeConcatWithConstants` call.)
+`javap` prints the constructor as `A();` and `<clinit>` as `static {};`, but look at what `static {};` *contains*: first the field initializer (`B.y + 1` computed and stored into `x`, offsets 0–5), then the static block (offsets 8–22), **in the textual order of the source**. One synthetic method, glued together from both. (And offset 14 is a cameo from [Lesson 05](../part-1-bytecode/05-invokedynamic.md): the `"x=" + x` concatenation inside the block is an indified `makeConcatWithConstants` call.)
 
 The real method names live in the constant pool as `Utf8` entries:
 
@@ -401,7 +401,7 @@ javap -v Lazy | grep -E "Utf8 +<(cl)?init>"
 | | `<init>` | `<clinit>` |
 |---|---|---|
 | Glued from | instance field initializers, instance blocks, constructor body | `static` field initializers, `static {}` blocks |
-| Runs when | every `new` (called by the `new`/`dup`/`invokespecial` sequence from [Lesson 04](04-invocation-opcodes.md)) | once per class loader, at first active use |
+| Runs when | every `new` (called by the `new`/`dup`/`invokespecial` sequence from [Lesson 04](../part-1-bytecode/04-invocation-opcodes.md)) | once per class loader, at first active use |
 | Locking | none needed — the object isn't shared yet | the class initialization lock (JLS §12.4.2) |
 
 ### 5. Link-time failure: a `VerifyError` on purpose
@@ -507,7 +507,7 @@ Exception Details:
 	at Linking.main(Linking.java:9)
 ```
 
-Read the ordering carefully — it's the whole lesson in one stack trace. **Step 1 still succeeds**: the corrupted class *loads* fine, because loading checks structure, not type safety. The `VerifyError` fires only when the first active use forces **linking**, and the verifier — walking the operand stack exactly as [Lesson 03](03-the-operand-stack.md) described — catches `areturn` trying to return an `int` (`stack: { integer }`) as a reference. The error names the phase (`VerifyError`), the instruction (`@2: areturn`), and the exact type violation. Not one byte of `BadMath` executed.
+Read the ordering carefully — it's the whole lesson in one stack trace. **Step 1 still succeeds**: the corrupted class *loads* fine, because loading checks structure, not type safety. The `VerifyError` fires only when the first active use forces **linking**, and the verifier — walking the operand stack exactly as [Lesson 03](../part-1-bytecode/03-the-operand-stack.md) described — catches `areturn` trying to return an `int` (`stack: { integer }`) as a reference. The error names the phase (`VerifyError`), the instruction (`@2: areturn`), and the exact type violation. Not one byte of `BadMath` executed.
 
 Corrupted class files in the wild come from truncated downloads, bad redeploys, or bytecode tools (weavers, agents, obfuscators) emitting something invalid — and now you know why the failure surfaces at first use rather than at startup. To restore sanity, recompile: `javac BadMath.java`.
 
@@ -518,7 +518,7 @@ Corrupted class files in the wild come from truncated downloads, bad redeploys, 
 1. Make the constant non-constant: change `Lazy.GREETING` to `public static final String GREETING = "hello".toUpperCase();` (a method call — no longer a constant variable). Recompile *both* files, re-run `java ConstantReader`, and re-check `javap -c ConstantReader`. What replaced the `ldc`, and why does `<clinit>` now run?
 2. Add a scenario that reads `Sub.touched` (a field `Sub` *inherits* but does not declare). Predict which class(es) initialize, then run it. What does the result tell you about trigger 4 and the phrase "declared by"?
 3. Run `java -Xlog:class+load=info Triggers new` and find the `Lazy` load line. What does the gap between it and the `>>>` line confirm about loading versus initialization?
-4. Corrupt `BadMath.class` differently: overwrite its first four bytes instead of the `ireturn`. Which error do you get now, and which *phase* throws it? (Compare with [Lesson 02](02-anatomy-of-a-class-file.md)'s magic-number check.) Why is the timing of the failure different from the `VerifyError`?
+4. Corrupt `BadMath.class` differently: overwrite its first four bytes instead of the `ireturn`. Which error do you get now, and which *phase* throws it? (Compare with [Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md)'s magic-number check.) Why is the timing of the failure different from the `VerifyError`?
 5. Replace `Class.forName("Lazy")` with `Class.forName("Lazy", false, ClassLoader.getSystemClassLoader())` in the `forName` scenario. Predict the output, then run.
 
 ---
