@@ -2,7 +2,7 @@
 
 ## What you'll learn
 
-- Why "every `new` allocates on the heap" has been wrong since the mid-2000s
+- Why "every `new` allocates on the heap" has been wrong since the 2000s
 - The three escape states HotSpot assigns to every allocation: no escape, method escape, global escape
 - Scalar replacement: the object's fields are promoted to registers and locals, and the allocation vanishes entirely
 - Why escape analysis runs *after* inlining, and what lock elision does with a lock nobody else can see
@@ -14,7 +14,7 @@
 
 Ask a room of Java engineers where objects live and most will answer "the heap." It was in the study guide, it was in the interview prep, and for the first decade of Java it was simply true. Then HotSpot shipped escape analysis in the Java 6 era, and a quiet revolution happened: for a huge class of objects — small, short-lived, never shared — the allocation you wrote is an allocation the JVM *never performs*. No header, no heap write, no GC work. The object dissolves into its fields.
 
-Engineers who don't know this contort their code against an enemy that died twenty years ago: object pools for tiny value objects, reusable buffers threaded through five parameters, a phobia of allocating inside a loop. Engineers who do know it get a sharper superpower — they can look at an allocation and predict whether it costs anything at all.
+Engineers who don't know this contort their code against an enemy that died in the 2000s: object pools for tiny value objects, reusable buffers threaded through five parameters, a phobia of allocating inside a loop. Engineers who do know it get a sharper superpower — they can look at an allocation and predict whether it costs anything at all.
 
 There is a second, sneakier reason this lesson exists, and lesson 22 (benchmarking with JMH) will lean on it hard: **a benchmark that allocates a dead object measures nothing.** If the object never escapes, the JIT deletes the very work you thought you were timing. Understanding escape analysis is the difference between a benchmark and a placebo.
 
@@ -78,7 +78,11 @@ The same proof buys a second optimization. A `synchronized` block's cost is the 
 
 ## Hands-on
 
-We'll build the two cases side by side in one program: one hot loop where the allocated `Point` never escapes, and one where a single extra line — storing it into a static field — forces GlobalEscape. Then a control run with the analysis switched off, to prove the difference is escape analysis and nothing else.
+We'll build the two cases side by side in one program: one hot loop where the allocated `Point` never escapes, and one where a single extra line — storing it into a static field — forces GlobalEscape. Then a control run with the analysis switched off, to prove the difference is escape analysis and nothing else. All commands run from the usual samples directory:
+
+```bash
+cd ~/jvm-internals-samples/lesson15
+```
 
 ### 1. The benchmark
 
@@ -367,7 +371,7 @@ Because EA is only as strong as its visibility into how a reference is used. Bef
 - Every allocation gets an escape state: **NoEscape** (dies inside the method), **ArgEscape** (crosses a method boundary), **GlobalEscape** (stored where it outlives the call). Only NoEscape allocations are eliminated.
 - **Scalar replacement** dissolves a NoEscape object into register-held fields — no header, no heap write, no GC. It is not "stack allocation"; the object never exists in memory at all.
 - The same proof enables **lock elision**: a lock no other thread can observe is removed. Both optimizations preserve observable behaviour — same result, less machinery.
-- "Objects always live on the heap" died in the mid-2000s. The new rule: **allocation ≠ heap** — and remember it in lesson 22, where escape analysis is exactly what makes naive benchmarks lie.
+- "Objects always live on the heap" died in the 2000s. The new rule: **allocation ≠ heap** — and remember it in lesson 22, where escape analysis is exactly what makes naive benchmarks lie.
 - On production JDKs the tracing flags (`PrintEscapeAnalysis`, `PrintEliminateAllocations`) are develop-only. Observe EA by its effects: GC silence under `-Xlog:gc`, with `-XX:-DoEscapeAnalysis` as the control.
 
 **Previous:** [Lesson 14 — Compressed oops](14-compressed-oops.md) · **Next:** [Lesson 16 — String internals](16-string-internals.md)

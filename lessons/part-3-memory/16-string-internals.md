@@ -193,7 +193,7 @@ Instance fields of java.lang.String:
   value.length  = 40 bytes
 ```
 
-Same `length()`, same logical string — but the snowman flipped the whole instance to coder 1 and doubled the array from 20 to 40 bytes. That is JEP 254 read straight out of the object.
+*(Field listing order follows `getDeclaredFields()`, which the spec does not guarantee — this JDK returns declaration order.)* Same `length()`, same logical string — but the snowman flipped the whole instance to coder 1 and doubled the array from 20 to 40 bytes. That is JEP 254 read straight out of the object.
 
 ### 2. The price per string, measured
 

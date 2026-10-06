@@ -60,7 +60,7 @@ Flip back to [Lesson 12](12-runtime-data-areas.md)'s routing table: direct buffe
 
 ### The budget: `-XX:MaxDirectMemorySize`
 
-First use in this course, so the full explanation. `-XX:MaxDirectMemorySize=<size>` is a HotSpot product flag that caps the total **capacity** of direct buffers reserved through `java.nio`. The bookkeeping lives in `java.nio.Bits.reserveMemory`: every `allocateDirect` adds the new buffer's capacity to a counter, and if the counter would exceed the limit, the reservation is refused and you get an `OutOfMemoryError`. The default is `0`, which doesn't mean "no direct buffers" — it means *derive the limit from the maximum heap size* (`-Xmx`). So an uncapped JVM effectively budgets direct memory at the same size as its heap. You'll verify both halves of that empirically below: the flag prints as `0`, and a `-Xmx48m` run dies with `limit: 50331648` — 48 MiB to the byte.
+[Lesson 12](12-runtime-data-areas.md) named this flag in passing; first full explanation here. `-XX:MaxDirectMemorySize=<size>` is a HotSpot product flag that caps the total **capacity** of direct buffers reserved through `java.nio`. The bookkeeping lives in `java.nio.Bits.reserveMemory`: every `allocateDirect` adds the new buffer's capacity to a counter, and if the counter would exceed the limit, the reservation is refused and you get an `OutOfMemoryError`. The default is `0`, which doesn't mean "no direct buffers" — it means *derive the limit from the maximum heap size* (`-Xmx`). So an uncapped JVM effectively budgets direct memory at the same size as its heap. You'll verify both halves of that empirically below: the flag prints as `0`, and a `-Xmx48m` run dies with `limit: 50331648` — 48 MiB to the byte.
 
 [Lesson 12](12-runtime-data-areas.md)'s routing table files this flavor as `OutOfMemoryError: Direct buffer memory` — that's the substring worth grepping for. On this JDK the actual message is more helpful:
 
@@ -418,7 +418,12 @@ jcmd 168931 VM.native_memory detail
 Detail tracking is not enabled
 ```
 
-Second, the whole tool is absent without the startup flag — here's a `DirectHold` launched with plain `java`, no NMT:
+Second, the whole tool is absent without the startup flag — here's a `DirectHold` launched with plain `java`, no NMT, and the same question put to it:
+
+```bash
+java DirectHold &
+jcmd 170447 VM.native_memory summary
+```
 
 ```text
 170447:

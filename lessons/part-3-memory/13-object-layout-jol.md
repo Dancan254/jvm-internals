@@ -410,7 +410,7 @@ Internal losses are gaps *between* fields, inserted so each field sits at an off
 <details>
 <summary>Reveal answer</summary>
 
-The 4-byte slot at offset 12 sits between the 12-byte header and the first offset that can hold an 8-byte `long` (offset 16). Placing an `int` there uses space that declaration-order layout would have wasted as padding, so the JVM packs fields by size rather than by source order. The consequence: reordering fields in source cannot change the instance size at all — HotSpot already normalises the order. Only changing the field mix (fewer or narrower fields) shrinks the object.
+The 4-byte slot at offset 12 sits between the 12-byte header and the first offset that can hold an 8-byte `long` (offset 16). Placing an `int` there uses space that declaration-order layout would have wasted as padding, so the JVM packs fields by size rather than by source order. The consequence: reordering fields in source cannot, in practice, change the instance size at all — HotSpot already normalises the order. Only changing the field mix (fewer or narrower fields) shrinks the object.
 
 </details>
 

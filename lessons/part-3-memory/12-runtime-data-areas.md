@@ -11,7 +11,7 @@
 
 ## Why this matters
 
-[Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) opened with a wall of production error messages and a promise: each one names a part of the machine. Eleven lessons and two parts later the course has already made good on two of them — `NoClassDefFoundError` was Part 2's classloader subsystem, and `OutOfMemoryError: Metaspace` was [Lesson 10](../part-2-classloading/10-classloader-leaks.md)'s classloader leak. This lesson finishes the map.
+[Lesson 01](../part-0-the-machine/01-jvm-jre-jdk-big-picture.md) opened with a wall of production error messages and a promise: each one names a part of the machine. Eleven lessons and three parts later the course has already made good on two of them — `NoClassDefFoundError` was Part 2's classloader subsystem, and `OutOfMemoryError: Metaspace` was [Lesson 10](../part-2-classloading/10-classloader-leaks.md)'s classloader leak. This lesson finishes the map.
 
 The practical skill is *routing*. When an on-call alert says a JVM died, the error text tells you which memory area ran out, and the area tells you which knob, which diagnostic, and which lesson of this course applies. `OutOfMemoryError: Java heap space` and `OutOfMemoryError: Metaspace` share nine words and have nothing else in common: one is objects in a GC-managed arena, the other is class metadata in native memory. Teams that can't tell them apart do the classic wrong thing — raise `-Xmx` and watch the JVM die again, slower. You've already seen the proof: Lesson 10's leak died with 15 MB used of a 56 MB heap.
 
@@ -93,7 +93,7 @@ Here is the deliverable the rest of Part 3 consumes. Each error flavor maps to e
 | `java.lang.StackOverflowError` | JVM stack — one thread's | `StackBoom`, this lesson |
 | `java.lang.OutOfMemoryError: Java heap space` | Heap | `HeapBoom`, this lesson |
 | `java.lang.OutOfMemoryError: Metaspace` | Metaspace (class metadata) | `LeakLoop`, [Lesson 10](../part-2-classloading/10-classloader-leaks.md) |
-| `java.lang.OutOfMemoryError: Direct buffer memory` | Off-heap direct buffers — outside all five areas | Lesson 17 |
+| `java.lang.OutOfMemoryError: Direct buffer memory` | Off-heap direct buffers — outside all five areas | [Lesson 17](17-off-heap-memory.md) |
 | `java.lang.OutOfMemoryError: unable to create native thread` | Native method stacks / OS threads | None — see below |
 
 The direct-buffer row uses the traditional short name. On this JDK the real message is more verbose — `java.lang.OutOfMemoryError: Cannot reserve 8388608 bytes of direct buffer memory (allocated: 33554432, limit: 33554432)`, captured on this machine under `-XX:MaxDirectMemorySize=32m` — but it still names direct buffer memory plainly, and lesson 17 produces the full line on purpose.
