@@ -49,7 +49,7 @@ stack trace.
 8. Capture and read a JFR recording; drive `jcmd` for heap/class/thread diagnostics.
 9. Write a minimal `java.lang.instrument` agent.
 
-## 3 · Curriculum — 7 parts, 32 lessons
+## 3 · Curriculum — 7 parts, 33 lessons (00–32)
 
 ### Part 0 · The machine (lessons 00–01)
 
