@@ -51,7 +51,7 @@ When a trap fires, the JVM **deoptimizes**: it walks the compiled frame, reconst
 
 And the old machine code? Its retirement has three stages:
 
-- **made not entrant** — the nmethod (a compiled method body in the code cache; lesson 19 tours that cache) is marked so no *new* caller enters it. Activations already inside either trap out immediately or run to completion.
+- **made not entrant** — the nmethod (a compiled method body in the code cache; [Lesson 19](19-watching-the-jit.md) tours that cache) is marked so no *new* caller enters it. Activations already inside either trap out immediately or run to completion.
 - **zombie** — once no activation remains, the nmethod is dead weight: unreachable, awaiting reclaim.
 - **flushed** — the sweeper frees the memory back to the code cache, lazily, when the cache needs room.
 
@@ -180,7 +180,7 @@ Bytecode index 15 is the call: `invokeinterface`, because the static type of `op
 
 ### 2. Watch it inline, then watch it deopt
 
-Run with `-XX:+PrintCompilation` — the flag lesson 18 reads line by line; its columns (timestamp, compilation id, tier, method) and marker characters are lesson 18's table, and the `%` marking on-stack replacement gets its due in lesson 21. Filter to the lines that matter:
+Run with `-XX:+PrintCompilation` — the flag [Lesson 18](18-tiered-compilation.md) reads line by line; its columns (timestamp, compilation id, tier, method) and marker characters are lesson 18's table, and the `%` marking on-stack replacement gets its due in lesson 21. Filter to the lines that matter:
 
 ```bash
 java -XX:+PrintCompilation DeoptDemo 2>&1 | grep -E "DeoptDemo|phase"
@@ -349,7 +349,7 @@ phase 2 done, checksum=15000699965000
 
 Sections 2 and 4 left several nmethods `made not entrant`, and no further sign of them. Retirement finishes in the background: once no thread is inside a not-entrant nmethod it becomes a **zombie**, and the sweeper eventually **flushes** it to reclaim code-cache space — lazily, only when the cache is pressured. With the default multi-hundred-megabyte cache, a toy program never pressures anything, which is why you saw no retirement.
 
-To watch it in a bounded run, shrink the cache and generate a crowd of throwaway compiled methods. `-XX:ReservedCodeCacheSize` caps the code cache (lesson 19 owns the cache tour; here the flag is just a pressure valve). The throwaway methods come from [Lesson 09](../part-2-classloading/09-custom-classloaders.md)'s mechanics: define the same tiny class under 1,200 fresh loaders — distinct classes per the (name, loader) identity rule — and call each copy's method enough times to get it compiled.
+To watch it in a bounded run, shrink the cache and generate a crowd of throwaway compiled methods. `-XX:ReservedCodeCacheSize` caps the code cache ([Lesson 19](19-watching-the-jit.md) owns the cache tour; here the flag is just a pressure valve). The throwaway methods come from [Lesson 09](../part-2-classloading/09-custom-classloaders.md)'s mechanics: define the same tiny class under 1,200 fresh loaders — distinct classes per the (name, loader) identity rule — and call each copy's method enough times to get it compiled.
 
 `Tiny.java`:
 
