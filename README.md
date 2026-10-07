@@ -7,7 +7,7 @@
 **33 lessons · a quiz in every lesson · one final exam**
 
 [![Java](https://img.shields.io/badge/Java-25_LTS-f0196a?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/25/)
-[![Lessons](https://img.shields.io/badge/lessons-18_of_33-f0196a?style=for-the-badge&logo=bookstack&logoColor=white)](lessons/README.md)
+[![Lessons](https://img.shields.io/badge/lessons-23_of_33-f0196a?style=for-the-badge&logo=bookstack&logoColor=white)](lessons/README.md)
 [![Sequel](https://img.shields.io/badge/sequel_to-concurreny--multithreading-12121f?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Dancan254/concurreny-multithreading)
 
 [**Start the course →**](lessons/README.md) &nbsp;·&nbsp; [Course index](lessons/README.md) &nbsp;·&nbsp; [The concurrency course ←](https://github.com/Dancan254/concurreny-multithreading)
@@ -123,16 +123,16 @@ flowchart LR
 
 </details>
 
-<details>
-<summary><b>Part 4 · Execution engine</b> — coming soon</summary>
+<details open>
+<summary><b>Part 4 · Execution engine</b></summary>
 
 | # | Lesson | You'll learn |
 |:-:|---|---|
-| 18 | Tiered compilation — *coming soon* | Interpreter → C1 → C2; reading `-XX:+PrintCompilation` line by line |
-| 19 | Watching the JIT work — *coming soon* | Live compilation of a hot method; the code cache |
-| 20 | Inlining & deoptimization — *coming soon* | Forcing a live deopt; made-not-entrant, made-zombie |
-| 21 | OSR & loop optimizations — *coming soon* | On-stack replacement; unrolling; loop-invariant hoisting |
-| 22 | Honest benchmarking with JMH — *coming soon* | Warmup, dead-code elimination; why naive `nanoTime` loops lie |
+| 18 | [Tiered compilation](lessons/part-4-execution-engine/18-tiered-compilation.md) | Interpreter → C1 → C2; reading `-XX:+PrintCompilation` line by line |
+| 19 | [Watching the JIT work](lessons/part-4-execution-engine/19-watching-the-jit.md) | Live compilation of a hot method; the code cache |
+| 20 | [Inlining & deoptimization](lessons/part-4-execution-engine/20-inlining-and-deoptimization.md) | Forcing a live deopt; made-not-entrant, made-zombie |
+| 21 | [OSR & loop optimizations](lessons/part-4-execution-engine/21-osr-and-loop-optimizations.md) | On-stack replacement; unrolling; loop-invariant hoisting |
+| 22 | [Honest benchmarking with JMH](lessons/part-4-execution-engine/22-honest-benchmarking-jmh.md) | Warmup, dead-code elimination; why naive `nanoTime` loops lie |
 
 </details>
 

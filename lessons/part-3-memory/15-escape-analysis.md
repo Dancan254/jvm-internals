@@ -16,7 +16,7 @@ Ask a room of Java engineers where objects live and most will answer "the heap."
 
 Engineers who don't know this contort their code against an enemy that died in the 2000s: object pools for tiny value objects, reusable buffers threaded through five parameters, a phobia of allocating inside a loop. Engineers who do know it get a sharper superpower — they can look at an allocation and predict whether it costs anything at all.
 
-There is a second, sneakier reason this lesson exists, and lesson 22 (benchmarking with JMH) will lean on it hard: **a benchmark that allocates a dead object measures nothing.** If the object never escapes, the JIT deletes the very work you thought you were timing. Understanding escape analysis is the difference between a benchmark and a placebo.
+There is a second, sneakier reason this lesson exists, and [lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md) (benchmarking with JMH) will lean on it hard: **a benchmark that allocates a dead object measures nothing.** If the object never escapes, the JIT deletes the very work you thought you were timing. Understanding escape analysis is the difference between a benchmark and a placebo.
 
 Here is the corrected mental model, the one this lesson produces: `new` in bytecode is a *request*. Whether an object materializes on the heap is a *decision* — made by the C2 JIT compiler, per call site, after inlining, based on where the reference provably goes.
 
@@ -66,7 +66,7 @@ Notice what this is **not**: it is not "stack allocation." HotSpot does not emit
 
 ### Why this only works after inlining
 
-Escape analysis is exactly as strong as its visibility. `Point p = new Point(...)` followed by `return p` is a method escape — today. But [Lesson 04](../part-1-bytecode/04-invocation-opcodes.md) noted that C2 inlines hot call sites, and inlining *changes the evidence*: once the caller and callee are one compilation unit, a reference that "escaped to another method" may turn out never to leave the fused method at all. So C2 runs escape analysis **after** its inlining pass, on the largest view of the code it can get. An allocation that escapes at bytecode level is routinely reclassified as NoEscape once the surrounding calls are inlined away. (The inlining machinery itself — call-site profiling, guards, deoptimization — is Part 4's subject.)
+Escape analysis is exactly as strong as its visibility. `Point p = new Point(...)` followed by `return p` is a method escape — today. But [Lesson 04](../part-1-bytecode/04-invocation-opcodes.md) noted that C2 inlines hot call sites, and inlining *changes the evidence*: once the caller and callee are one compilation unit, a reference that "escaped to another method" may turn out never to leave the fused method at all. So C2 runs escape analysis **after** its inlining pass, on the largest view of the code it can get. An allocation that escapes at bytecode level is routinely reclassified as NoEscape once the surrounding calls are inlined away. (The inlining machinery itself — call-site profiling, guards, deoptimization — is [Lesson 20](../part-4-execution-engine/20-inlining-and-deoptimization.md)'s subject.)
 
 This also explains the analysis's fundamental conservatism. One path where the reference reaches a static field — even a path never taken at runtime — can force the allocation to be real on *every* path, unless C2 can prove that path dead.
 
@@ -136,7 +136,7 @@ public class EscapeBench {
 
 Read `sum` as escape analysis sees it. In both modes a `Point` is born per iteration and its fields feed `total`. In `noescape` mode nothing else happens to it — the reference dies at the loop's back-edge. In `escape` mode, `SINK[0] = p` stores the reference into a static field: reachable from a GC root after the method returns, so GlobalEscape, so a real allocation. (Only the *last* `Point` survives — the sink is one slot — which keeps the live set tiny and the demo bounded: 200 million iterations, a fixed count, over in seconds.)
 
-The warmup matters. Escape analysis lives in C2, and C2 only compiles *hot* code; the three warmup calls push `sum` through the tiers so the timed run executes fully compiled. The result is accumulated and printed so the loop is not dead code — lesson 22 explores what happens when you forget that.
+The warmup matters. Escape analysis lives in C2, and C2 only compiles *hot* code; the three warmup calls push `sum` through the tiers so the timed run executes fully compiled. The result is accumulated and printed so the loop is not dead code — [lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md) explores what happens when you forget that.
 
 Compile, then look at the bytecode with `javap -c` (`javap` is [Lesson 02](../part-1-bytecode/02-anatomy-of-a-class-file.md)'s tool):
 
@@ -228,7 +228,7 @@ mode=escape result=5343371213818391040 elapsed=6300ms
 
 Same bytecode, same result — `5343371213818391040` in both modes, because escape analysis must preserve observable behaviour — and now ~160 young pauses. Each `Point` is about 24 bytes on this JVM (the [Lesson 13](13-object-layout-jol.md) math: 12-byte header, two 4-byte `int` fields, 4 bytes of alignment padding), so 200 million of them is several gigabytes of churn. Look at the GC lines: every pause goes from ~35–39 MB used down to ~1 MB. The live set is one slot of `SINK` — the garbage is *everything else*, dying one iteration after birth. This is textbook high-churn allocation, and it is exactly what the NoEscape run avoided by never allocating.
 
-One honest caution about the `elapsed=` numbers: this is a teaching demo, not a benchmark. Timings here are polluted by warmup, GC pauses and everything else on the machine; the GC *counts* are the signal. Rigorous microbenchmarking — including how escape analysis and dead-code elimination conspire to fake your results — is lesson 22's job.
+One honest caution about the `elapsed=` numbers: this is a teaching demo, not a benchmark. Timings here are polluted by warmup, GC pauses and everything else on the machine; the GC *counts* are the signal. Rigorous microbenchmarking — including how escape analysis and dead-code elimination conspire to fake your results — is [lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md)'s job.
 
 ### 4. The control: switch the analysis off
 
@@ -292,7 +292,7 @@ Error: A fatal exception has occurred. Program will exit.
 
 Two new things to unpack here. `-XX:+UnlockDiagnosticVMOptions` — first use in this course — is the gate for HotSpot's *diagnostic* flag tier: flags meant for JVM engineers and support work, which HotSpot rejects unless you unlock them first. But the error message reveals a third tier beyond *product* flags (like `-XX:-DoEscapeAnalysis`, always accepted) and *diagnostic* flags (accepted once unlocked): **develop** flags, compiled into debug/fastdebug JVM builds only. Zulu 25.28 is a production build, so no amount of unlocking will give you these two flags — and that's the honest state of play on any production JDK you'd deploy.
 
-So how do you observe escape analysis in production? Exactly the way this lesson did it: by its *effects*. GC silence under `-Xlog:gc` where the bytecode provably allocates; and the `-XX:-DoEscapeAnalysis` A/B pair to confirm the credit belongs to the analysis. Indirect evidence is the normal mode of JVM detective work — lesson 22 uses the same trick from the benchmark side.
+So how do you observe escape analysis in production? Exactly the way this lesson did it: by its *effects*. GC silence under `-Xlog:gc` where the bytecode provably allocates; and the `-XX:-DoEscapeAnalysis` A/B pair to confirm the credit belongs to the analysis. Indirect evidence is the normal mode of JVM detective work — [lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md) uses the same trick from the benchmark side.
 
 ---
 
@@ -309,9 +309,9 @@ So how do you observe escape analysis in production? Exactly the way this lesson
 ## Common mistakes
 
 - **"Every `new` allocates on the heap."** The folklore this lesson exists to kill. `new` is bytecode semantics; the heap allocation is a JIT decision, per call site, after inlining. The NoEscape run allocated two hundred million objects in the source and zero in the machine.
-- **"Escape analysis removes the `new` from my class file."** It never touches the class file — section 1's `javap -c` output has `new #7` at offset 11 in both modes. The elimination happens in C2's generated machine code, per compilation, and can be undone by deoptimization if the JVM's assumptions break (Part 4).
+- **"Escape analysis removes the `new` from my class file."** It never touches the class file — section 1's `javap -c` output has `new #7` at offset 11 in both modes. The elimination happens in C2's generated machine code, per compilation, and can be undone by deoptimization if the JVM's assumptions break ([Lesson 20](../part-4-execution-engine/20-inlining-and-deoptimization.md)).
 - **"So the object is allocated on the stack instead."** No — HotSpot does not do general stack allocation of objects. Scalar replacement dissolves the object entirely: its fields become registers and locals, and no header, pointer, or object-shaped memory exists anywhere. "Stack allocation" is a comforting wrong picture; "the object never existed" is the right one.
-- **"Escape analysis makes allocation free, so I should/shouldn't pool objects."** Both halves are overreach. EA is a best-effort, per-compilation proof — it depends on inlining succeeding, on no escaping path existing, on C2 being reached at all. Write clear code and measure (lesson 22); don't contort designs around an optimization with no contractual guarantees, and don't pool tiny short-lived objects out of habit.
+- **"Escape analysis makes allocation free, so I should/shouldn't pool objects."** Both halves are overreach. EA is a best-effort, per-compilation proof — it depends on inlining succeeding, on no escaping path existing, on C2 being reached at all. Write clear code and measure ([lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md)); don't contort designs around an optimization with no contractual guarantees, and don't pool tiny short-lived objects out of habit.
 - **"`-XX:-DoEscapeAnalysis` changed nothing, so my objects were being eliminated."** Or the method never got hot enough for C2 to compile it — EA only runs in C2, never in the interpreter or C1. Confirm compilation happened (the warmup pattern in `EscapeBench` exists for exactly this reason) before concluding anything from a null result.
 
 ---
@@ -371,7 +371,7 @@ Because EA is only as strong as its visibility into how a reference is used. Bef
 - Every allocation gets an escape state: **NoEscape** (dies inside the method), **ArgEscape** (crosses a method boundary), **GlobalEscape** (stored where it outlives the call). Only NoEscape allocations are eliminated.
 - **Scalar replacement** dissolves a NoEscape object into register-held fields — no header, no heap write, no GC. It is not "stack allocation"; the object never exists in memory at all.
 - The same proof enables **lock elision**: a lock no other thread can observe is removed. Both optimizations preserve observable behaviour — same result, less machinery.
-- "Objects always live on the heap" died in the 2000s. The new rule: **allocation ≠ heap** — and remember it in lesson 22, where escape analysis is exactly what makes naive benchmarks lie.
+- "Objects always live on the heap" died in the 2000s. The new rule: **allocation ≠ heap** — and remember it in [lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md), where escape analysis is exactly what makes naive benchmarks lie.
 - On production JDKs the tracing flags (`PrintEscapeAnalysis`, `PrintEliminateAllocations`) are develop-only. Observe EA by its effects: GC silence under `-Xlog:gc`, with `-XX:-DoEscapeAnalysis` as the control.
 
 **Previous:** [Lesson 14 — Compressed oops](14-compressed-oops.md) · **Next:** [Lesson 16 — String internals](16-string-internals.md)

@@ -20,7 +20,7 @@ You have spent four lessons *reading* bytecode: the constant pool, the operand s
 
 Most of these tools use Byte Buddy or ASM under the hood. This lesson uses **ASM** — the lowest-level, closest-to-the-metal library — because it has no abstractions hiding the class file from you. When you write a class with ASM, every constant-pool entry, every access flag and every instruction is a call *you* made. If you can generate a class by hand, reading one will never scare you again.
 
-This is also the one lesson in Parts 0–1 that needs a third-party library, so it is the reason the course has a single Maven module: `labs/`. [Lesson 13](../part-3-memory/13-object-layout-jol.md) (JOL) has since added its dependency to the same module; Lesson 22 (JMH) will follow.
+This is also the one lesson in Parts 0–1 that needs a third-party library, so it is the reason the course has a single Maven module: `labs/`. [Lesson 13](../part-3-memory/13-object-layout-jol.md) (JOL) and [Lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md) (JMH) have since added their dependencies to the same module.
 
 ---
 
@@ -381,7 +381,7 @@ Purely for inspection. The `byte[]` goes straight from `toByteArray()` into the 
 <details>
 <summary>Reveal answer</summary>
 
-ASM is a third-party dependency, and the course rule is that third-party code lives in exactly one place: `labs/`. Everything else runs as `java File.java` on `java.base` alone. The same module now also hosts JOL ([Lesson 13](../part-3-memory/13-object-layout-jol.md)) and will host JMH (Lesson 22), so the one-time Maven setup gets reused.
+ASM is a third-party dependency, and the course rule is that third-party code lives in exactly one place: `labs/`. Everything else runs as `java File.java` on `java.base` alone. The same module now also hosts JOL ([Lesson 13](../part-3-memory/13-object-layout-jol.md)) and JMH ([Lesson 22](../part-4-execution-engine/22-honest-benchmarking-jmh.md)), so the one-time Maven setup gets reused.
 
 </details>
 

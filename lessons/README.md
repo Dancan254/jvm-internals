@@ -108,13 +108,13 @@ flowchart LR
 
 ## Part 4: Execution engine
 
-| # | Lesson | Status |
-|---|---|:-:|
-| 18 | Tiered compilation: interpreter → C1 → C2, read line by line | *coming soon* |
-| 19 | Watching the JIT work: hot methods, the code cache | *coming soon* |
-| 20 | Inlining & deoptimization: forcing a live deopt | *coming soon* |
-| 21 | OSR & loop optimizations: on-stack replacement, unrolling, hoisting | *coming soon* |
-| 22 | Honest benchmarking with JMH: why naive `nanoTime` loops lie | *coming soon* |
+| # | Lesson |
+|---|---|
+| 18 | [Tiered compilation](part-4-execution-engine/18-tiered-compilation.md): interpreter → C1 → C2, read line by line |
+| 19 | [Watching the JIT work](part-4-execution-engine/19-watching-the-jit.md): hot methods, the code cache |
+| 20 | [Inlining & deoptimization](part-4-execution-engine/20-inlining-and-deoptimization.md): forcing a live deopt |
+| 21 | [OSR & loop optimizations](part-4-execution-engine/21-osr-and-loop-optimizations.md): on-stack replacement, unrolling, hoisting |
+| 22 | [Honest benchmarking with JMH](part-4-execution-engine/22-honest-benchmarking-jmh.md): why naive `nanoTime` loops lie |
 
 ## Part 5: Garbage collection
 

@@ -517,4 +517,4 @@ Growing `Other` with a flat heap is the direct-buffer signature (on this JDK, di
 - NMT (`-XX:NativeMemoryTracking=summary`, startup-only) plus `jcmd VM.native_memory` is the accounting view: categories, reserved vs committed, and the baseline → `summary.diff` workflow that answers "what grew." Direct buffers land in `Other` on this JDK — verify on yours.
 - The process's memory is bigger than every heap graph: `-Xmx` caps one area of many, and Part 6's observability lessons assume you can read the rest.
 
-**Previous:** [Lesson 16 — String internals](16-string-internals.md) · **Next:** Lesson 18 — Tiered compilation
+**Previous:** [Lesson 16 — String internals](16-string-internals.md) · **Next:** [Lesson 18 — Tiered compilation](../part-4-execution-engine/18-tiered-compilation.md)

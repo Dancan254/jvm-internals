@@ -298,16 +298,16 @@ java HoistBench
 ```
 
 ```
-inLoop      result=7.071060740797658E13 elapsed=315ms
-handHoisted result=7.071060740797658E13 elapsed=328ms
-viaVolatile result=7.071060740797658E13 elapsed=2016ms
+inLoop      result=7.071060740797658E13 elapsed=496ms
+handHoisted result=7.071060740797658E13 elapsed=449ms
+viaVolatile result=7.071060740797658E13 elapsed=1973ms
 ```
 
 *(Absolute times vary run to run and machine to machine — re-run it a few times. What is stable is the relationship: `inLoop` and `handHoisted` land in the same band, and `viaVolatile` is several times slower.)*
 
 Read the three rows as one argument. `inLoop` contains a `sqrt` per iteration in the *source*; `handHoisted` provably executes one `sqrt` per call. They tie — so C2's compiled code for `inLoop` also executes one `sqrt` per call. It proved `factor` invariant (a parameter, never written in the loop) and `Math.sqrt` pure (it is a HotSpot intrinsic with no side effects), then hoisted the computation out of the loop for you. **Hand-hoisting buys nothing** — the JIT already did it.
 
-`viaVolatile` is the same computation fed by a `volatile` field, and it costs ~6× as much. A `volatile` read is not allowed to assume the world stands still: the memory semantics ([the concurrency course's `volatile` lesson](https://github.com/Dancan254/concurreny-multithreading/blob/master/lessons/part-2-shared-state/07-visibility-and-volatile.md) has the full model) require each read to observe the latest write, so the value is *not provably invariant*, so the `sqrt` — and the volatile load itself — stay inside the loop, two hundred million times. One keyword, and an entire optimization family quietly switches off. This is why "I made the field `volatile` to be safe" is not a free decision in hot code.
+`viaVolatile` is the same computation fed by a `volatile` field, and it costs ~4× as much in this capture — we have measured anywhere from 2× to 6× across runs; the digit moves, the multiplier never disappears. A `volatile` read is not allowed to assume the world stands still: the memory semantics ([the concurrency course's `volatile` lesson](https://github.com/Dancan254/concurreny-multithreading/blob/master/lessons/part-2-shared-state/07-visibility-and-volatile.md) has the full model) require each read to observe the latest write, so the value is *not provably invariant*, so the `sqrt` — and the volatile load itself — stay inside the loop, two hundred million times. One keyword, and an entire optimization family quietly switches off. This is why "I made the field `volatile` to be safe" is not a free decision in hot code.
 
 ### 5. Loop unrolling: same bytecode, less loop
 
@@ -347,7 +347,7 @@ java UnrollBench
 ```
 
 ```
-result=5999997000 elapsed=1068ms
+result=5999997000 elapsed=1301ms
 ```
 
 ```bash
@@ -355,10 +355,10 @@ java -XX:LoopMaxUnroll=1 UnrollBench
 ```
 
 ```
-result=5999997000 elapsed=2158ms
+result=5999997000 elapsed=3022ms
 ```
 
-*(Absolute times vary; the gap is stable across runs.)* Identical bytecode in both runs — unrolling never touches the class file — and identical results, because like every optimization in Part 4 it must preserve observable behaviour. The default run is ~2× faster. Where the speed comes from: fewer back-edge tests and branches per element, range checks shared across unrolled copies, independent loads the CPU can overlap — and, honestly, more than that. A wide unrolled body is the raw material C2's SuperWord auto-vectorizer turns into SIMD instructions, so capping unrolling also takes vectorization down with it. The 2× you just measured is the *loop-optimization pipeline*, not unrolling in isolation (the Try-it-yourself section has you split the credit with `-XX:-UseSuperWord`).
+*(Absolute times vary; the gap is stable across runs.)* Identical bytecode in both runs — unrolling never touches the class file — and identical results, because like every optimization in Part 4 it must preserve observable behaviour. The default run is ~2.3× faster (we measured 2×–2.7× across runs). Where the speed comes from: fewer back-edge tests and branches per element, range checks shared across unrolled copies, independent loads the CPU can overlap — and, honestly, more than that. A wide unrolled body is the raw material C2's SuperWord auto-vectorizer turns into SIMD instructions, so capping unrolling also takes vectorization down with it. The gap you just measured is the *loop-optimization pipeline*, not unrolling in isolation (the Try-it-yourself section has you split the credit with `-XX:-UseSuperWord`).
 
 Two flag-honesty notes, both verified on this JDK just now. First, the flag older material tells you to reach for is gone:
 
@@ -394,7 +394,7 @@ Which is why this lesson, like lesson 15, teaches you to read these optimization
 
 1. Shrink `LongLoop`'s bound to `50000000` and re-run section 1 a few times. Does the `%` line still appear before the loop finishes? What does the answer tell you about the race between the back-edge threshold and the total trip count — and about how long a loop must run for OSR to matter at all?
 2. Restructure `LongLoop` so the loop body lives in `static long work(long n)` called **once** from `main`, and confirm the `%` marker moves to `LongLoop::work`. Then change the shape: give `work` a tiny loop and call it two million times from `main`'s loop. The `%` lines vanish and ordinary compile lines appear. Which counter fired in each shape, and why does the second shape not need OSR?
-3. Split the credit in section 5: run `java -XX:-UseSuperWord UnrollBench` (first use — it disables C2's SuperWord auto-vectorizer, leaving unrolling on). Where does the time land relative to the default run and the `LoopMaxUnroll=1` run? What does that tell you about how much of the 2× was unrolling and how much was vectorization riding on it?
+3. Split the credit in section 5: run `java -XX:-UseSuperWord UnrollBench` (first use — it disables C2's SuperWord auto-vectorizer, leaving unrolling on). Where does the time land relative to the default run and the `LoopMaxUnroll=1` run? What does that tell you about how much of the gap was unrolling and how much was vectorization riding on it?
 4. In `HoistBench`, change `volatileFactor` to a plain non-`volatile` static field and re-run. Predict `viaVolatile`'s time before you run it. What does the result tell you about which reads C2 treats as provably invariant?
 5. Find this JDK's default unroll cap with [Lesson 12](../part-3-memory/12-runtime-data-areas.md)'s `java -XX:+PrintFlagsFinal -version | grep LoopMaxUnroll`, then run `java -XX:LoopMaxUnroll=4 UnrollBench`. Where does it land between the two section-5 numbers, and what does the scaling suggest about when unrolling stops paying?
 
@@ -406,7 +406,7 @@ Which is why this lesson, like lesson 15, teaches you to read these optimization
 - **"`%` lines in the compilation log mean something went wrong."** They mean something went right: a long loop in a cold method was rescued mid-flight. A `%` entry is the log working as designed, not an anomaly to hunt down.
 - **"The `@` number is a source line number."** It is a bytecode index — the OSR entry point, almost always a loop header. Verify with `javap -c` exactly as section 1 did: the `@ 23` there was `lload 5`, the target of the loop's `goto`.
 - **Copy-pasting JIT flags from old material.** `-XX:-LoopUnrolling` is all over the web and does not exist on JDK 25 — the VM refuses to start (section 5's real error). JIT flags are HotSpot internals with no compatibility contract; run every flag on *your* JDK before it goes into a script, a runbook or a lesson.
-- **"A `volatile` read in a hot loop is just a slightly slower read."** The `viaVolatile` row paid ~6×, not because one load is expensive, but because an unprovably-invariant input keeps the `sqrt` — and every optimization that depends on invariance — inside the loop. The cost of `volatile` in hot code is the optimizations it forbids, not the instruction itself.
+- **"A `volatile` read in a hot loop is just a slightly slower read."** The `viaVolatile` row paid ~4× (2×–6× across runs), not because one load is expensive, but because an unprovably-invariant input keeps the `sqrt` — and every optimization that depends on invariance — inside the loop. The cost of `volatile` in hot code is the optimizations it forbids, not the instruction itself.
 - **"`javac` unrolls loops / hoists invariants."** `javac` emits the loop exactly as written — one body copy, the invariant expression inside it; sections 1 and 5's `javap` output shows it plainly. Unrolling and hoisting happen exclusively in C2's generated machine code, after OSR or a normal compile hands the loop over. Which is also why a loop that never gets hot never gets either.
 
 ---
@@ -440,7 +440,7 @@ With OSR disabled, the only route to compiled code is the whole-method path, whi
 
 </details>
 
-**4. `inLoop` (with `Math.sqrt(factor)` inside the loop) and `handHoisted` (sqrt lifted out by hand) tie, while `viaVolatile` costs ~6×. What did C2 do to `inLoop`, and why can't it do the same for `viaVolatile`?**
+**4. `inLoop` (with `Math.sqrt(factor)` inside the loop) and `handHoisted` (sqrt lifted out by hand) tie, while `viaVolatile` costs several times more. What did C2 do to `inLoop`, and why can't it do the same for `viaVolatile`?**
 
 <details>
 <summary>Reveal answer</summary>
@@ -449,12 +449,12 @@ Loop-invariant code motion: C2 proved `factor` is never modified in the loop and
 
 </details>
 
-**5. `-XX:LoopMaxUnroll=1` slowed `UnrollBench` by ~2×, yet `javap -c` on the class shows one single copy of the loop body regardless of the flag. Reconcile the two facts.**
+**5. `-XX:LoopMaxUnroll=1` slowed `UnrollBench` by ~2.3×, yet `javap -c` on the class shows one single copy of the loop body regardless of the flag. Reconcile the two facts.**
 
 <details>
 <summary>Reveal answer</summary>
 
-Unrolling is a machine-code transformation, not a bytecode one. `javac` always emits exactly one copy of the loop body, which is all `javap` can ever show. C2 unrolls when it compiles the hot loop, generating multiple body copies per pass through the generated code; `LoopMaxUnroll` caps how many copies it may produce, and `1` forbids unrolling entirely. Same class file, different generated code — and since a wide unrolled body is also what the SuperWord vectorizer consumes, the measured 2× reflects the whole unrolling-and-vectorization pipeline, not unrolling alone.
+Unrolling is a machine-code transformation, not a bytecode one. `javac` always emits exactly one copy of the loop body, which is all `javap` can ever show. C2 unrolls when it compiles the hot loop, generating multiple body copies per pass through the generated code; `LoopMaxUnroll` caps how many copies it may produce, and `1` forbids unrolling entirely. Same class file, different generated code — and since a wide unrolled body is also what the SuperWord vectorizer consumes, the measured gap reflects the whole unrolling-and-vectorization pipeline, not unrolling alone.
 
 </details>
 
@@ -466,7 +466,7 @@ Unrolling is a machine-code transformation, not a bytecode one. `javac` always e
 - **On-stack replacement** compiles the method with its entry at the loop header and swaps the *running* interpreted frame into compiled code mid-loop. In `-XX:+PrintCompilation`, OSR entries carry the `%` marker and an `@` bytecode index you can verify against `javap -c`.
 - OSR compiles tier up (3 → 4), get invalidated, and deoptimize exactly like normal compiles — [Lesson 18](18-tiered-compilation.md)'s tiers and [Lesson 20](20-inlining-and-deoptimization.md)'s machinery, entered through the loop.
 - Disable OSR (`-XX:-UseOnStackReplacement`) and a single-invocation method's loop runs interpreted to the end: same bytecode, same result, ~20× slower. That experiment is the entire case for OSR's existence.
-- Once C2 owns a loop it rewrites it: **unrolling** (`LoopMaxUnroll`, default 16 here — bytecode untouched) and **invariant hoisting** (hand-hoisting ties the JIT; a `volatile` input defeats it at ~6× cost). On production JDKs the tracing flags are develop-only, so you read these optimizations by A/B effect — and you verify every flag on your own JDK, because removed ones like `-XX:-LoopUnrolling` kill the VM at startup.
+- Once C2 owns a loop it rewrites it: **unrolling** (`LoopMaxUnroll`, default 16 here — bytecode untouched) and **invariant hoisting** (hand-hoisting ties the JIT; a `volatile` input defeats it at several-fold cost). On production JDKs the tracing flags are develop-only, so you read these optimizations by A/B effect — and you verify every flag on your own JDK, because removed ones like `-XX:-LoopUnrolling` kill the VM at startup.
 - Everything you timed here was warmup-then-measure with accumulated results — the shape lesson 22 turns into a discipline, because the same machinery (OSR timing, hoisting, dead-code elimination) is exactly what makes naive benchmarks lie.
 
 **Previous:** [Lesson 20 — Inlining & deoptimization](20-inlining-and-deoptimization.md) · **Next:** [Lesson 22 — Honest benchmarking with JMH](22-honest-benchmarking-jmh.md)
