@@ -143,52 +143,53 @@ The program's own phase markers land in the same stream, so you can slice the lo
 
 ```
 --- cold phase: 100 iterations ---
+94   60       3       jdk.internal.util.StrongReferenceKey::hashCode (8 bytes)
 --- warm phase: 200000 iterations ---
-2058   64       3       CompileWatch::work (33 bytes)
-2059   65       4       CompileWatch::work (33 bytes)
-2062   64       3       CompileWatch::work (33 bytes)   made not entrant: not used
-2073   66 %     3       CompileWatch::phase @ 18 (84 bytes)
-2076   67       3       CompileWatch::phase (84 bytes)
-2080   68 %     4       CompileWatch::phase @ 18 (84 bytes)
-2084   66 %     3       CompileWatch::phase @ 18 (84 bytes)   made not entrant: OSR invalidation of lower levels
-2091   68 %     4       CompileWatch::phase @ 18 (84 bytes)   made not entrant: uncommon trap
+2096   64       3       CompileWatch::work (33 bytes)
+2097   65       4       CompileWatch::work (33 bytes)
+2101   64       3       CompileWatch::work (33 bytes)   made not entrant: not used
+2119   66 %     3       CompileWatch::phase @ 18 (84 bytes)
+2125   67       3       CompileWatch::phase (84 bytes)
+2131   68 %     4       CompileWatch::phase @ 18 (84 bytes)
+2138   66 %     3       CompileWatch::phase @ 18 (84 bytes)   made not entrant: OSR invalidation of lower levels
+2155   68 %     4       CompileWatch::phase @ 18 (84 bytes)   made not entrant: uncommon trap
 --- hot phase: 100000 iterations ---
 ```
 
 Read it phase by phase:
 
-- **Cold: total silence.** Not one compilation line in the entire window — 100 calls never crossed a single threshold, so `CompileWatch::work` and `CompileWatch::phase` ran **purely interpreted**, and the interpreter leaves no trace in this log. That's the first reading skill: *absence of a line means interpreted*, not "not running."
-- **Warm (~2.1 s): our methods climb.** `work` appears at tier 3, is recompiled at tier 4 three milliseconds later, and the tier-3 version is `made not entrant` — retired now that a better one exists. Then `phase` follows with `%`-marked entries — *on-stack replacement*, the running method's loop swapped to compiled code mid-flight (lesson 21 teaches OSR properly): OSR at tier 3, ordinary tier 3, OSR at tier 4. Two `made not entrant` reasons show up — `OSR invalidation of lower levels` and `uncommon trap`; both are deoptimization vocabulary, and lesson 20 owns them. For now just note: **methods are compiled more than once, and old versions are discarded.** The cache is a place with turnover, not an archive.
-- **Hot (~2.1–4.3 s): the storm.** In this window the log prints ~287 lines and almost none are ours — a sample:
+- **Cold: silence, for our code.** One straggler from JVM startup — `StrongReferenceKey::hashCode`, class-loading machinery finishing its climb during the sleep — and not one `CompileWatch::` line in the entire window (some runs show no stragglers at all, some a few; never ours). 100 calls never crossed a single threshold, so `CompileWatch::work` and `CompileWatch::phase` ran **purely interpreted**, and the interpreter leaves no trace in this log. That's the first reading skill: *absence of a line means that method ran interpreted*, not "not running."
+- **Warm (~2.1 s): our methods climb.** `work` appears at tier 3, is recompiled at tier 4 a millisecond later, and the tier-3 version is `made not entrant` — retired now that a better one exists. Then `phase` follows with `%`-marked entries — *on-stack replacement*, the running method's loop swapped to compiled code mid-flight (lesson 21 teaches OSR properly): OSR at tier 3, ordinary tier 3, OSR at tier 4. Two `made not entrant` reasons show up — `OSR invalidation of lower levels` and `uncommon trap`; both are deoptimization vocabulary, and lesson 20 owns them. For now just note: **methods are compiled more than once, and old versions are discarded.** The cache is a place with turnover, not an archive.
+- **Hot (~2.2–4.5 s): the storm.** In this window the log prints ~291 lines and almost none are ours — a sample:
 
 ```
-4107  103       3       java.util.regex.Pattern$BmpCharPropertyGreedy::match (89 bytes)
-4108  101       3       java.util.regex.Pattern$$Lambda/0x800000027::is (9 bytes)
-4108  102       3       java.util.regex.Pattern::lambda$Single$0 (11 bytes)
-4109  118       3       java.util.regex.Matcher::search (154 bytes)
-4109  119       3       java.util.regex.Pattern$Start::match (90 bytes)
-4110  107       3       java.util.regex.Matcher::checkMatch (19 bytes)
-4110  108       3       java.util.regex.Matcher::hasMatch (13 bytes)
-4112  124       4       java.util.regex.Pattern$BmpCharPropertyGreedy::match (89 bytes)
+4178  103       3       java.util.regex.Pattern$BmpCharPropertyGreedy::match (89 bytes)
+4179  101       3       java.util.regex.Pattern$$Lambda/0x800000027::is (9 bytes)
+4179  119       3       java.util.regex.Pattern$Start::match (90 bytes)
+4180  118       3       java.util.regex.Matcher::search (154 bytes)
+4181  108       3       java.util.regex.Matcher::hasMatch (13 bytes)
+4181  107       3       java.util.regex.Matcher::checkMatch (19 bytes)
+4183  124       4       java.util.regex.Pattern$BmpCharPropertyGreedy::match (89 bytes)
+4188  115       3       java.util.regex.Matcher::start (9 bytes)
 ```
 
-`String.format` and the regex engine pull their machinery through the tiers — including a generated lambda class (`Pattern$$Lambda/...`), because lambdas are real classes with real methods. Watch one method climb within eight lines: `BmpCharPropertyGreedy::match` at tier 3 on 4107 ms, recompiled at tier 4 on 4112 ms. This is what "warmup" actually is for a real service: not your five hot methods, but *thousands of library methods* crossing thresholds.
+`String.format` and the regex engine pull their machinery through the tiers — including a generated lambda class (`Pattern$$Lambda/...`), because lambdas are real classes with real methods. Watch one method climb within seven lines: `BmpCharPropertyGreedy::match` at tier 3 on 4178 ms, recompiled at tier 4 on 4183 ms. This is what "warmup" actually is for a real service: not your five hot methods, but *thousands of library methods* crossing thresholds.
 
-Don't trust the prose — count. This `awk` slices the log at the phase markers and tallies compilation lines per window:
+Don't trust the prose — count. This `awk` slices the log at the phase markers and tallies compilation lines per window (every compilation, JDK's included — hence the cold window's straggler):
 
 ```bash
 awk '/--- cold/{p="cold"} /--- warm/{p="warm"} /--- hot/{p="hot"} /--- done/{p="hold"} /^[0-9]/{c[p==""?"startup":p]++} END{print "startup:", c["startup"]+0; print "cold:", c["cold"]+0; print "warm:", c["warm"]+0; print "hot:", c["hot"]+0; print "hold:", c["hold"]+0}' compilation.log
 ```
 
 ```
-startup: 65
-cold: 0
+startup: 64
+cold: 1
 warm: 8
-hot: 287
-hold: 18
+hot: 291
+hold: 7
 ```
 
-*(Counts vary per run — the shape, small-small-huge, is the point.)* Two things to notice. The `warm` window's 8 lines are *entirely* our two methods (counting a couple twice — turnover again), while `hot` is 30× busier and almost entirely JDK code. And `hold` isn't zero: after our program stops computing, the compiler threads finish draining their queue — the JIT is a background crew that keeps working while your code idles.
+*(Counts vary per run — the shape, small-small-huge, is the point. In particular `cold` fluctuates between zero and a few JVM-startup stragglers; what's invariant is that none of them are `CompileWatch::` lines.)* Two things to notice. The `warm` window's 8 lines are *entirely* our two methods (counting a couple twice — turnover again), while `hot` is 30× busier and almost entirely JDK code. And `hold` isn't zero: after our program stops computing, the compiler threads finish draining their queue — the JIT is a background crew that keeps working while your code idles.
 
 ### 3. Where did the compiled code go? The exit-time snapshot
 
@@ -228,7 +229,7 @@ Compilation: enabled, stopped_count=0, restarted_count=0
 
 *(Addresses, and to a lesser degree the `used` numbers, vary per run.)* Line by line:
 
-- The three `CodeHeap` blocks are the segments from the concept section, in the flesh. `size` is the segment's reservation, carved out of the 240 MB total at startup — on this machine 5700K + 120028K + 120028K = 245756K ≈ the `CodeCache: size=245760Kb` line, matching the `NonNMethodCodeHeapSize`/`ProfiledCodeHeapSize`/`NonProfiledCodeHeapSize` values in lesson 12's flag dump. `bounds` gives each segment's address range — three disjoint native-memory ranges, which is what "segmented" physically means.
+- The three `CodeHeap` blocks are the segments from the concept section, in the flesh. `size` is the segment's reservation, carved out of the 240 MB total at startup — on this machine 5700K + 120028K + 120032K = 245760K, exactly the `CodeCache: size=245760Kb` line, matching the `NonNMethodCodeHeapSize`/`ProfiledCodeHeapSize`/`NonProfiledCodeHeapSize` values in lesson 12's flag dump. `bounds` gives each segment's address range — three disjoint native-memory ranges, which is what "segmented" physically means.
 - `used` / `max_used` / `free`: current occupancy, high-water mark, remainder. A JVM that compiled almost nothing (Hello) still burns ~1.2 MB — the non-nmethods segment carries the interpreter stubs and adapters the JVM itself needs. Our 35-second workout added ~500 KB and grew nmethods from 7 to **305** — those 305 are section 2's event stream, at rest.
 - `total_blobs` counts everything in the cache (nmethods + adapters + stubs); `full_count=0` means the cache never filled — remember this field's name for section 5.
 - `Compilation: enabled` — the compiler ran to the end. Also remember this line.
@@ -498,7 +499,7 @@ Compilation: disabled (not enough contiguous free space left), stopped_count=1, 
 
 *(Exactly when the cache fills varies; in this run it went at 7.9 s, mid-heating, between rounds 200 and 250 — the sweeper held the line through generation and class loading, then the round-robin compilations overwhelmed it.)* Every beat of the incident from the concept section is here:
 
-- **The warnings.** Two channels fire, once each, with no `-Xlog` flag needed — unified logging prints `[warning]`-level lines by default: the `[warning][codecache]` pair, and the tty-style `OpenJDK 64-Bit Server VM warning:` twins on stderr. Note the second line of each pair: `Try increasing the code cache size using -XX:ReservedCodeCacheSize=` — the JVM names its own remedy. Nothing repeats, nothing throws. (Add `-Xlog:codecache=info` and you additionally get the 25 sweep cycles — `Triggering threshold ... GC due to allocating ...` — that fought from the first second of the run and lost, plus an `[info][codecache] Code cache is full - disabling compilation` line.)
+- **The warnings.** Two channels fire, once each, with no `-Xlog` flag needed — unified logging prints `[warning]`-level lines by default: the `[warning][codecache]` pair, and the tty-style `OpenJDK 64-Bit Server VM warning:` twins on stderr. Note the second line of each pair: `Try increasing the code cache size using -XX:ReservedCodeCacheSize=` — the JVM names its own remedy. Nothing repeats, nothing throws. (Add `-Xlog:codecache=info` and you additionally get the sweep cycles — roughly two dozen `Triggering threshold ... GC due to allocating ...` lines in our runs — that fought from the first second of the run and lost, plus an `[info][codecache] Code cache is full - disabling compilation` line.)
 - **An immediate snapshot at the moment of failure.** The JVM prints a `CodeCache` summary *when it fills*, not just at exit: `used=2495Kb` of `size=2496Kb`, `free=0Kb`, `full_count=1`, and the verdict `Compilation: disabled (not enough contiguous free space left), stopped_count=1`. The exit-time snapshot tells the identical story. In production you'd collect the same facts live via `jcmd Compiler.codecache` — which is why section 4 called them out by name.
 - **The program finishes — exit code 0.** Correctness untouched: `acc` *and* `sink` are byte-identical to the control run. Only the speed changed.
 - **The cliff.** The aftermath probe went from 359 ms to **6079 ms** — ~17× slower, because `probe` got hot *after* the compiler was disabled and ran fully interpreted. The heating phase kept its compiled head start (965 → 1199 ms): rounds 0–200 had already been compiled when the cache gave out, and compiled code already installed keeps running. These are demo timings, not benchmark-grade numbers — lesson 22 earns the right to measure this properly — but the direction and scale are the point.
@@ -520,6 +521,7 @@ Error: VM option 'PrintAssembly' is diagnostic and must be enabled via -XX:+Unlo
 Error: The unlock option must precede 'PrintAssembly'.
 Improperly specified VM option 'PrintAssembly'
 Error: Could not create the Java Virtual Machine.
+Error: A fatal exception has occurred. Program will exit.
 ```
 
 Unlocked, on a stock JDK, you get the *second* obstacle — HotSpot doesn't bundle a disassembler. It needs the `hsdis` library (buildable from the OpenJDK source tree, or findable prebuilt for your platform):
@@ -557,7 +559,7 @@ Compiled method (c1) 51    1       3       java.lang.Object::<init> (1 bytes)
 
 - **"A `CodeCache is full` warning means the JVM crashed or will."** It means the *compiler* stopped. The application runs correctly, interpreted, at a fraction of its speed, indefinitely — and the only evidence is one stderr line plus `full_count=1` and `Compilation: disabled` in a `Compiler.codecache` snapshot. The failure mode is a performance cliff, not an outage, which is exactly why it goes unnoticed.
 - **"`-Xmx` bounds the JVM's code memory."** `-Xmx` caps the Java heap ([Lesson 12](../part-3-memory/12-runtime-data-areas.md)) and nothing else. The code cache is native memory with its own ceiling (`ReservedCodeCacheSize`), counted under NMT's `Code` category ([Lesson 17](../part-3-memory/17-off-heap-memory.md)). Container memory math that forgets it is how kernels get to OOM-kill "heap-sized" JVMs.
-- **"The code cache only holds my application's compiled methods."** Section 2's hot phase was ~287 lines of `java.util.regex`, `java.util.Formatter` and lambda classes; section 3's near-empty `Hello` JVM already carried 300+ blobs of stubs and adapters. Your code is a minority tenant of the cache. Sizing or monitoring it from "how big is my app" alone misses the JDK's own footprint.
+- **"The code cache only holds my application's compiled methods."** Section 2's hot phase was ~290 lines of `java.util.regex`, `java.util.Formatter` and lambda classes; section 3's near-empty `Hello` JVM already carried 300+ blobs of stubs and adapters. Your code is a minority tenant of the cache. Sizing or monitoring it from "how big is my app" alone misses the JDK's own footprint.
 - **"Compilation is one-way: once compiled, always compiled."** The log disagrees in a single warm phase: tier 2 → OSR tier 4 → tier 4, with the earlier versions `made not entrant`. The cache has *turnover* — compilations replace each other, deoptimizations (lesson 20) invalidate them, the sweeper reclaims the dead. `nmethods` at any instant is survivors, not the total ever compiled.
 - **"Raising `ReservedCodeCacheSize` is free headroom."** It's reserved native memory, committed as used — a bigger cache is real RSS your container limit feels. Size it from evidence (`used`/`max_used` under real load), not from superstition, and remember the floor: below `InitialCodeCacheSize` the JVM won't even boot.
 
@@ -606,7 +608,7 @@ Compilation changes *how* code executes, never *what* it computes — the same c
 <details>
 <summary>Reveal answer</summary>
 
-Almost nothing. The *initial* size is only where the cache starts; it still grows on demand up to `ReservedCodeCacheSize`, so the ceiling — and the fill — are unchanged (in our run the fill arrived at the same point mid-heating either way). What does change: the cache begins life cramped, so the sweeper starts cycling within milliseconds of startup — a real `-Xlog:codecache=info` line from such a run shows a `Triggering threshold ... GC` at 0.031 s, before your code has done anything. The 2496 KB floor itself is non-negotiable because the JVM needs that room for its own stubs and adapters before a single Java method compiles; `Hello` alone already occupies ~1.2 MB of it.
+Almost nothing. The *initial* size is only where the cache starts; it still grows on demand up to `ReservedCodeCacheSize`, so with the reservation still pinned at 2496 KB the ceiling — and the fill — are unchanged (in our run, `-XX:InitialCodeCacheSize=1m -XX:ReservedCodeCacheSize=2496k` filled at the same point mid-heating as the plain 2496 KB pin). What does change: the cache begins life cramped, so the sweeper starts cycling within milliseconds of startup — a real `-Xlog:codecache=info` line from such a run shows a `Triggering threshold ... GC` at 0.031 s, before your code has done anything. The 2496 KB floor itself is non-negotiable because the JVM needs that room for its own stubs and adapters before a single Java method compiles; `Hello` alone already occupies ~1.2 MB of it.
 
 </details>
 

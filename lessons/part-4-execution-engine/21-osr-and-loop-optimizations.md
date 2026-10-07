@@ -175,7 +175,7 @@ public class LongLoopEH {
 }
 ```
 
-Run it with `-XX:-BackgroundCompilation` — first use in this course, so full explanation. By default (`BackgroundCompilation` is on) HotSpot queues compilation requests and executes them on dedicated compiler threads while your application keeps running interpreted or OSR code; the log lines you saw in section 1 appeared *after the fact*. `-XX:-BackgroundCompilation` makes compilation **synchronous**: the thread that triggered the request blocks until the compile finishes. That is terrible for startup and throughput, but it makes logs deterministic, and it stamps every queued compile with the `b` (blocking) marker:
+Run it with [Lesson 18](18-tiered-compilation.md)'s `-XX:-BackgroundCompilation` — the flag that makes every compilation synchronous, which lesson 18 introduced to catch the `b` marker. We use it here for the same reason plus one more: with the compiler threads taken out of the timing equation, the log is deterministic, and every queued compile carries the `b` (blocking) marker:
 
 ```bash
 javac LongLoopEH.java

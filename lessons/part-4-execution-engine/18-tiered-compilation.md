@@ -189,7 +189,7 @@ Column by column:
 - **`8`** — the *compilation ID*, a sequence number for this compilation task. Notice it appears twice: once when `squarePlus` is compiled at tier 3, and again lower down when that same tier-3 version is `made not entrant`. The ID is how you match a compilation's birth to its retirement.
 - **`s` / `!` / `%`** — the attribute column. Marker letters, decoded below. This line has none.
 - **`3`** — the **tier**. This is C1 with full profiling. Follow `squarePlus` down the log and you watch the escalator: compiled at tier 3 at 64 ms, compiled again at **tier 4** (C2) within the same millisecond, under a new ID (`11`), and then the tier-3 version — ID `8` again — is `made not entrant`. The profile said the method was hot; C2 rebuilt it better; the JVM redirected new calls to the C2 version and retired the C1 one. Same story for `bump` (IDs 9 → 12) and `safeDivide` (IDs 10 → 13).
-- **`HotMethod::squarePlus (8 bytes)`** — the method and its *bytecode* size. Eight bytes: two multiplies and an add, roughly. Small hot methods are compiled early and inlined eagerly; both lessons 20 and 21 build on that.
+- **`HotMethod::squarePlus (8 bytes)`** — the method and its *bytecode* size. Eight bytes: a multiply, an add, and the widening conversions, roughly. Small hot methods are compiled early and inlined eagerly; both lessons 20 and 21 build on that.
 
 The markers in the attribute column, all visible in this one run except `b`:
 

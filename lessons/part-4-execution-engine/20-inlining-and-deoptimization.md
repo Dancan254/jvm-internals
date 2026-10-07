@@ -519,4 +519,4 @@ Because the deopt fixes the problem it revealed. The first negative value spring
 - JIT logs are the least deterministic output in this course — ids, timestamps, counts all vary. Read shapes, not exact numbers.
 - The mental model to carry forward: **speculative optimization plus a deopt safety net.** Lesson 21 uses it for on-stack replacement and loop work, lesson 22 for benchmarks that don't lie, and lesson 27 for the safepoints where global invalidations get applied.
 
-**Previous:** [Lesson 17 — Off-heap memory & NMT](../part-3-memory/17-off-heap-memory.md) · **Next:** Lesson 23 — Reachability & references
+**Previous:** [Lesson 19 — Watching the JIT work](19-watching-the-jit.md) · **Next:** [Lesson 21 — OSR & loop optimizations](21-osr-and-loop-optimizations.md)
