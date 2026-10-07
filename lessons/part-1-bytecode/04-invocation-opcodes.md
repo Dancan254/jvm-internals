@@ -11,7 +11,7 @@
 
 ## Why this matters
 
-Every method call you have ever written compiles to one of four opcodes. That is not trivia. It is the difference between a call whose exact target is fixed in the class file, and a call whose target is only known when the instruction runs, because it depends on which object is sitting on the operand stack. Once you can look at a line of source and name its opcode, overriding stops being magic, stack traces read differently, and the JIT optimizations in Part 4 (inlining, devirtualization, deoptimization) have something to hang on. This lesson is also the setup for the next one: there is a *fifth* invocation opcode, `invokedynamic`, and it only makes sense as a contrast to the four you learn here.
+Every method call you have ever written compiles to one of four opcodes. That is not trivia. It is the difference between a call whose exact target is fixed in the class file, and a call whose target is only known when the instruction runs, because it depends on which object is sitting on the operand stack. Once you can look at a line of source and name its opcode, overriding stops being magic, stack traces read differently, and the JIT optimizations in [Lesson 20](../part-4-execution-engine/20-inlining-and-deoptimization.md) (inlining, devirtualization, deoptimization) have something to hang on. This lesson is also the setup for the next one: there is a *fifth* invocation opcode, `invokedynamic`, and it only makes sense as a contrast to the four you learn here.
 
 ---
 
