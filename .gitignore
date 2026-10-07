@@ -4,3 +4,4 @@ target/
 .vscode/
 *.iml
 .DS_Store
+docs/superpowers/plans/
